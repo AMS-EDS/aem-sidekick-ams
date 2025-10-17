@@ -161,12 +161,65 @@ async function getSites(_, { tab }) {
   if (!isTrustedOrigin(origin)) {
     return []; // don't give out any information
   }
+  const projects = await Promise.all((await getConfig('sync', 'projects') || [])
+    .map(async (handle) => {
+      const project = (await getConfig('sync', handle));
+      return {
+        ...project,
+        org: project.org || project.owner,
+        site: project.site || project.repo,
+      };
+    }));
+  return projects;
+}
 
-  return (await getConfig('sync', 'projects') || [])
-    .map((handle) => {
-      const [org, site] = handle.split('/');
-      return { org, site };
-    });
+/**
+ * Updates a configured site.
+ * @returns {Promise<boolean>} True if the site was updated, else false
+ */
+async function updateSite({ config }, { tab }) {
+  const { origin } = new URL(tab.url);
+
+  if (!isTrustedOrigin(origin)) {
+    return false; // don't update anything
+  }
+
+  const owner = config.owner || config.org;
+  const repo = config.repo || config.site;
+  if (owner && repo) {
+    const project = await getConfig('sync', `${owner}/${repo}`);
+    if (!project) {
+      log.warn(`updateSite: project ${owner}/${repo} not found`);
+      return false;
+    }
+    return !!(await updateProjectConfig({
+      ...project,
+      ...config,
+    }));
+  } else {
+    log.warn('updateSite: missing required parameters org (or owner) and site (or repo)');
+    return false;
+  }
+}
+
+/**
+ * Removes a configured site.
+ * @returns {Promise<boolean>} True if the site was removed, else false
+ */
+async function removeSite({ config }, { tab }) {
+  const { origin } = new URL(tab.url);
+
+  if (!isTrustedOrigin(origin)) {
+    return false; // don't update anything
+  }
+  const owner = config.owner || config.org;
+  const repo = config.repo || config.site;
+  if (owner && repo) {
+    return deleteProject(config);
+  } else {
+    log.warn('removeSite: missing required parameters org (or owner) and site (or repo)');
+    return false;
+  }
 }
 
 /**
@@ -194,18 +247,26 @@ async function launch({
  * @returns {Promise<boolean>} True if login flow started, else false
  */
 async function login({
-  owner, repo, org, site, selectAccount = false,
+  owner, repo, org, site, idp, selectAccount = false,
 }, { tab }) {
   owner = org || owner;
   repo = site || repo;
   const { origin } = new URL(tab.url);
   if (!isTrustedOrigin(origin)) {
-    return false; // don't start login flow
+    log.warn(`login: untrusted origin '${origin}'`);
+    return false;
+  }
+  if (idp && !['google', 'microsoft', 'adobe'].includes(idp)) {
+    log.warn(`login: unsupported idp '${idp}'`);
+    return false;
   }
   if (owner && repo) {
     // start login flow for this org
     const params = new URLSearchParams();
     params.set('extensionId', chrome.runtime.id);
+    if (idp) {
+      params.set('idp', idp);
+    }
     if (selectAccount) {
       params.set('selectAccount', 'true');
     }
@@ -229,7 +290,7 @@ async function login({
       chrome.runtime.onMessageExternal.addListener(adminResponseListener);
     });
   } else {
-    log.warn('launch: missing required parameter org or owner');
+    log.warn('launch: missing required parameters org (or owner) and site (or repo)');
     return false;
   }
 }
@@ -434,7 +495,17 @@ async function updateProject(_, { config }) {
   if (existingProject) {
     const hasChanges = Object.keys(config)
       .filter((key) => key !== 'owner' && key !== 'repo')
-      .some((key) => config[key] !== existingProject[key]);
+      .filter((key) => config[key])
+      .some((key) => {
+        if (key === 'mountpoints') {
+          return config[key][0] !== existingProject[key][0];
+        } else if (key === 'project') {
+          // don't override existing project name
+          return !existingProject.project;
+        } else {
+          return config[key] !== existingProject[key];
+        }
+      });
 
     if (hasChanges) {
       await updateProjectConfig(config);
@@ -461,9 +532,11 @@ export const internalActions = {
  * @type {Object} The external actions
  */
 export const externalActions = {
-  updateAuthToken,
   getAuthInfo,
   getSites,
   launch,
   login,
+  updateSite,
+  removeSite,
+  updateAuthToken,
 };
