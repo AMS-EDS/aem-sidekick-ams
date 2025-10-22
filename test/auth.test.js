@@ -102,7 +102,7 @@ describe('Test auth', () => {
           },
           condition: {
             excludedInitiatorDomains: ['da.live'],
-            regexFilter: '^https://admin.gov-aem.page/(config/test.json|[a-z]+/test/.*)',
+            regexFilter: '^https://admin.gov-aem.page/(config/test\\.json|[a-z]+/test/.*)',
             requestDomains: [
               'admin.gov-aem.page',
             ],
@@ -130,7 +130,7 @@ describe('Test auth', () => {
             ],
           },
           condition: {
-            regexFilter: '^https://[0-9a-z-]+--[0-9a-z-]+--test.gov-aem.(page|live|reviews)/.*',
+            regexFilter: '^https://[0-9a-z-]+--[0-9a-z-]+--test\\.gov-aem\\.(page|live|reviews)/.*',
             initiatorDomains: [
               'tools.gov-aem.live',
               'labs.gov-aem.live',
@@ -185,7 +185,7 @@ describe('Test auth', () => {
           },
           condition: {
             excludedInitiatorDomains: ['da.live'],
-            regexFilter: '^https://admin.gov-aem.page/(config/test.json|[a-z]+/test/.*)',
+            regexFilter: '^https://admin.gov-aem.page/(config/test\\.json|[a-z]+/test/.*)',
             requestDomains: [
               'admin.gov-aem.page',
             ],
@@ -213,7 +213,7 @@ describe('Test auth', () => {
             ],
           },
           condition: {
-            regexFilter: '^https://[0-9a-z-]+--[0-9a-z-]+--test.gov-aem.(page|live|reviews)/.*',
+            regexFilter: '^https://[0-9a-z-]+--[0-9a-z-]+--test\\.gov-aem\\.(page|live|reviews)/.*',
             initiatorDomains: [
               'tools.gov-aem.live',
               'labs.gov-aem.live',
@@ -343,7 +343,7 @@ describe('Test auth', () => {
           },
           condition: {
             excludedInitiatorDomains: ['da.live'],
-            regexFilter: '^https://admin.gov-aem.page/(config/test.json|[a-z]+/test/.*)',
+            regexFilter: '^https://admin.gov-aem.page/(config/test\\.json|[a-z]+/test/.*)',
             requestDomains: [
               'admin.gov-aem.page',
             ],
@@ -371,7 +371,7 @@ describe('Test auth', () => {
             ],
           },
           condition: {
-            regexFilter: '^https://[0-9a-z-]+--[0-9a-z-]+--test.gov-aem.(page|live|reviews)/.*',
+            regexFilter: '^https://[0-9a-z-]+--[0-9a-z-]+--test\\.gov-aem\\.(page|live|reviews)/.*',
             initiatorDomains: [
               'tools.gov-aem.live',
               'labs.gov-aem.live',
@@ -398,7 +398,7 @@ describe('Test auth', () => {
             ],
           },
           condition: {
-            regexFilter: '^https://[a-z0-9-]+--site--test.gov-aem.(page|live|reviews)/.*',
+            regexFilter: '^https://[a-z0-9-]+--site--test\\.gov-aem\\.(page|live|reviews)/.*',
             requestMethods: [
               'get',
               'post',
@@ -451,7 +451,8 @@ describe('Test auth', () => {
           }],
         },
         condition: {
-          regexFilter: '^https://admin.hlx.page/.*',
+          regexFilter: '^https://admin.gov-aem.page/.*',
+          requestDomains: ['admin.gov-aem.page'],
           requestMethods: ['get', 'post', 'delete'],
           resourceTypes: ['xmlhttprequest'],
         },

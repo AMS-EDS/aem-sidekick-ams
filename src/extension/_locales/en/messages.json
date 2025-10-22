@@ -293,7 +293,7 @@
       "message": "Development"
     },
     "docs": {
-      "message": "https://www.hlx.live/docs/sidekick"
+      "message": "https://www.aem.live/docs/sidekick"
     },
     "source": {
       "message": "Source"
@@ -315,6 +315,9 @@
     },
     "error_fatal": {
       "message": "Apologies, we seem to be having problems at the moment. Please try again later."
+    },
+    "error_fatal_details": {
+      "message": "Details"
     },
     "error_generic": {
       "message": "An error occurred: $1"
@@ -366,7 +369,7 @@
       "description": "Next onboarding slide"
     },
     "homepage": {
-      "message": "https://www.hlx.live/tools/sidekick/"
+      "message": "https://www.aem.live/tools/sidekick/"
     },
     "info": {
       "message": "Information"

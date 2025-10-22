@@ -1,3 +1,24 @@
+# [7.14.0](https://github.com/adobe/aem-sidekick/compare/v7.13.6...v7.14.0) (2025-07-10)
+
+
+### Features
+
+* only fetch status when needed ([#610](https://github.com/adobe/aem-sidekick/issues/610)) ([7d1c0f7](https://github.com/adobe/aem-sidekick/commit/7d1c0f73a75072a86105206916c0ea0a5fe666e0))
+
+## [7.13.6](https://github.com/adobe/aem-sidekick/compare/v7.13.5...v7.13.6) (2025-07-06)
+
+
+### Bug Fixes
+
+* passConfig does not pass all custom hosts ([#623](https://github.com/adobe/aem-sidekick/issues/623)) ([1128e4b](https://github.com/adobe/aem-sidekick/commit/1128e4bae17f036aed691928dfe93f608fd4b656))
+
+## [7.13.5](https://github.com/adobe/aem-sidekick/compare/v7.13.4...v7.13.5) (2025-06-24)
+
+
+### Bug Fixes
+
+* bulk preview for adobe events ([#614](https://github.com/adobe/aem-sidekick/issues/614)) ([f9a9e70](https://github.com/adobe/aem-sidekick/commit/f9a9e70e941fb1e0fefe3e6ecd725a6776ecb1e1))
+
 ## [7.13.4](https://github.com/adobe/aem-sidekick/compare/v7.13.3...v7.13.4) (2025-06-18)
 
 

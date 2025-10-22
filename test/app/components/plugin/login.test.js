@@ -46,13 +46,14 @@ describe('Login', () => {
   let appStore;
 
   let setStateSpy;
+  let reloadPageStub;
 
   beforeEach(async () => {
     appStore = new AppStore();
     sidekickTest = new SidekickTest(defaultSidekickConfig, appStore);
 
     setStateSpy = sidekickTest.sandbox.spy(appStore, 'setState');
-    sidekickTest.sandbox.stub(appStore, 'reloadPage');
+    reloadPageStub = sidekickTest.sandbox.stub(appStore, 'reloadPage');
 
     sidekickTest
       .mockHelixEnvironment(HelixMockEnvironments.PREVIEW);
@@ -93,10 +94,10 @@ describe('Login', () => {
       sidekickTest
         .mockFetchStatusUnauthorized()
         .mockFetchProfilePictureSuccess()
-        .mockFetchSidekickConfigNotFound();
+        .mockFetchSidekickConfigUnauthorized();
 
       sidekick = sidekickTest.createSidekick();
-      await sidekickTest.awaitStatusFetched();
+      await sidekickTest.awaitActionBar();
 
       await waitUntil(() => appStore.state === STATE.LOGIN_REQUIRED);
 
@@ -115,7 +116,7 @@ describe('Login', () => {
 
       sidekickTest
         .mockFetchStatusUnauthorized()
-        .mockFetchSidekickConfigForbidden()
+        .mockFetchSidekickConfigUnauthorized()
         .mockFetchProfilePictureSuccess()
         .mockFetchProfileUnauthorized();
 
@@ -124,7 +125,7 @@ describe('Login', () => {
 
       await waitUntil(() => appStore.state === STATE.LOGGING_OUT);
       await sidekickTest.awaitLoggedOut();
-      await waitUntil(() => appStore.state === STATE.LOGIN_REQUIRED);
+      await waitUntil(() => reloadPageStub.calledOnce);
     }).timeout(20000);
 
     it('Successful login and logout without authentication enabled ', async () => {
@@ -159,7 +160,7 @@ describe('Login', () => {
 
       await waitUntil(() => appStore.state === STATE.LOGGING_OUT);
       await sidekickTest.awaitLoggedOut();
-      await waitUntil(() => appStore.state === STATE.READY);
+      await waitUntil(() => reloadPageStub.calledOnce);
     }).timeout(20000);
 
     it('Successful login and logout with authentication enabled ', async () => {
@@ -194,7 +195,7 @@ describe('Login', () => {
 
       await waitUntil(() => appStore.state === STATE.LOGGING_OUT);
       await sidekickTest.awaitLoggedOut();
-      await waitUntil(() => appStore.state === STATE.READY);
+      await waitUntil(() => reloadPageStub.calledOnce);
     }).timeout(20000);
 
     it('Displays profile picture after login', async () => {
@@ -205,10 +206,9 @@ describe('Login', () => {
       sidekickTest
         .mockFetchStatusUnauthorized()
         .mockFetchProfilePictureSuccess()
-        .mockFetchSidekickConfigNotFound();
+        .mockFetchSidekickConfigUnauthorized();
 
       sidekick = sidekickTest.createSidekick();
-      await sidekickTest.awaitStatusFetched();
 
       await waitUntil(() => appStore.state === STATE.LOGIN_REQUIRED);
 
@@ -229,13 +229,12 @@ describe('Login', () => {
     it('Unauthorized after login ', async () => {
       sidekickTest
         .mockFetchStatusUnauthorized()
-        .mockFetchSidekickConfigNotFound();
+        .mockFetchSidekickConfigUnauthorized();
 
       // @ts-ignore
       const openStub = sidekickTest.sandbox.stub(appStore, 'openPage').returns({ closed: true });
 
       sidekick = sidekickTest.createSidekick();
-      await sidekickTest.awaitStatusFetched();
 
       await waitUntil(() => recursiveQuery(sidekick, 'login-button'));
       const loginButton = recursiveQuery(sidekick, 'login-button');
