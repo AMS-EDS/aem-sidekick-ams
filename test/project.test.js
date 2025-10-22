@@ -358,6 +358,7 @@ describe('Test project', () => {
     expect(isValidHost('https://main--bar--foo.hlx.random', 'foo', 'bar')).to.be.false;
     // check without owner & repo
     expect(isValidHost('https://main--bar--foo.gov-aem.page')).to.be.true;
+    expect(isValidHost('https://main--bar--foo.gov-aem.live')).to.be.true;
   });
 
   it('isValidProject', () => {
@@ -432,6 +433,8 @@ describe('Test project', () => {
       repo: 'blog',
       ref: 'stage',
     };
+
+    // test github url
     const github = await getProjectFromUrl(mockTab('https://github.com/adobe/blog/tree/stage'));
     expect(github).to.eql(settings);
     const share = await getProjectFromUrl(mockTab('https://www.aem.live/tools/sidekick/?giturl=https://github.com/adobe/blog/tree/stage&project=Blog'));
@@ -439,15 +442,43 @@ describe('Test project', () => {
       project: 'Blog',
       ...settings,
     });
+
+    // test no match
     const nomatch = await getProjectFromUrl(mockTab('https://blog.adobe.com'));
     expect(nomatch).to.eql({});
+
+    // test cached result
     urlCache.set(mockTab('https://blog.adobe.com'), settings);
     const cached = await getProjectFromUrl(mockTab('https://blog.adobe.com'));
     expect(cached).to.eql({ ...settings, ref: 'main' });
-    const sharenogiturl = await getProjectFromUrl(mockTab('https://www.aem.live/tools/sidekick/'));
+
+    // test multiple cached results, but one is originalSite
+    const urlCacheGetStub = sandbox.stub(urlCache, 'get');
+    urlCacheGetStub.resolves([
+      settings,
+      {
+        org: 'foo',
+        site: 'bar',
+        // @ts-ignore
+        originalSite: true,
+      },
+    ]);
+    const cachedOriginalSite = await getProjectFromUrl(mockTab('https://foo.bar'));
+    expect(cachedOriginalSite).to.eql({
+      owner: 'foo',
+      repo: 'bar',
+      ref: 'main',
+    });
+    urlCacheGetStub.restore();
+
+    // test incomplete sharing url
+    const sharenogiturl = await getProjectFromUrl(mockTab('https://www.gov-aem.live/tools/sidekick/'));
     expect(sharenogiturl).to.eql({});
-    const shareinvalidgiturl = await getProjectFromUrl(mockTab('https://www.aem.live/tools/sidekick/?giturl=https://www.example.com'));
+
+    // test invalid shaaring url
+    const shareinvalidgiturl = await getProjectFromUrl(mockTab('https://www.gov-aem.live/tools/sidekick/?giturl=https://www.example.com'));
     expect(shareinvalidgiturl).to.eql({});
+
     // @ts-ignore
     const none = await getProjectFromUrl();
     expect(none).to.eql({});

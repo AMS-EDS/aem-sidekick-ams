@@ -1,3 +1,24 @@
+## [7.13.4](https://github.com/adobe/aem-sidekick/compare/v7.13.3...v7.13.4) (2025-06-18)
+
+
+### Bug Fixes
+
+* clean up dynamic rule before adding new one ([#608](https://github.com/adobe/aem-sidekick/issues/608)) ([8ed7b63](https://github.com/adobe/aem-sidekick/commit/8ed7b6329d6983231382f51c0fc72c7730a6f773))
+
+## [7.13.3](https://github.com/adobe/aem-sidekick/compare/v7.13.2...v7.13.3) (2025-06-17)
+
+
+### Bug Fixes
+
+* add project failing with site that is not originalSite ([#601](https://github.com/adobe/aem-sidekick/issues/601)) ([e9f7d3d](https://github.com/adobe/aem-sidekick/commit/e9f7d3d0263787f812f8c453479595371a268d8f)), closes [#600](https://github.com/adobe/aem-sidekick/issues/600)
+
+## [7.13.2](https://github.com/adobe/aem-sidekick/compare/v7.13.1...v7.13.2) (2025-06-16)
+
+
+### Bug Fixes
+
+* abort auto-save after 2s ([#602](https://github.com/adobe/aem-sidekick/issues/602)) ([836719e](https://github.com/adobe/aem-sidekick/commit/836719e8a7f41f25fe990294a4457b563aa71435))
+
 ## [7.13.1](https://github.com/adobe/aem-sidekick/compare/v7.13.0...v7.13.1) (2025-06-13)
 
 
