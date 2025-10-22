@@ -1,3 +1,52 @@
+# [7.16.0](https://github.com/adobe/aem-sidekick/compare/v7.15.1...v7.16.0) (2025-08-18)
+
+
+### Features
+
+* add site api ([#655](https://github.com/adobe/aem-sidekick/issues/655)) ([ae5f1c4](https://github.com/adobe/aem-sidekick/commit/ae5f1c4729689a0c672b888fa9518c3775841137))
+
+## [7.15.1](https://github.com/adobe/aem-sidekick/compare/v7.15.0...v7.15.1) (2025-08-12)
+
+
+### Bug Fixes
+
+* issue 520 - hide results count if not present in data ([d35fa62](https://github.com/adobe/aem-sidekick/commit/d35fa621450d50f9d91a735d308435002d8a6bf5))
+* toggle view on multi sheets where excel hasn't been published live yet ([af826fe](https://github.com/adobe/aem-sidekick/commit/af826fecbb4490ea10fe20dcf802006a0fcc937f))
+
+# [7.15.0](https://github.com/adobe/aem-sidekick/compare/v7.14.3...v7.15.0) (2025-08-06)
+
+
+### Bug Fixes
+
+* **bulk:** custom plugin override not respected ([#643](https://github.com/adobe/aem-sidekick/issues/643)) ([805a889](https://github.com/adobe/aem-sidekick/commit/805a889bfb488d0b2beaae089b268c0054105c81))
+
+
+### Features
+
+* **preview:** configurable word save delay ([#645](https://github.com/adobe/aem-sidekick/issues/645)) ([16c1369](https://github.com/adobe/aem-sidekick/commit/16c1369338385aae50a085eb8d0cabc9b9241793))
+
+## [7.14.3](https://github.com/adobe/aem-sidekick/compare/v7.14.2...v7.14.3) (2025-07-17)
+
+
+### Bug Fixes
+
+* Translations Update, please integrate ([#635](https://github.com/adobe/aem-sidekick/issues/635)) ([9651104](https://github.com/adobe/aem-sidekick/commit/9651104e9bb1edfca929817e52b14b2114faee03))
+* update project loses id ([#637](https://github.com/adobe/aem-sidekick/issues/637)) ([ba0a748](https://github.com/adobe/aem-sidekick/commit/ba0a74816835af21c17b6f0e8b1b244bab3e257a))
+
+## [7.14.2](https://github.com/adobe/aem-sidekick/compare/v7.14.1...v7.14.2) (2025-07-14)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#634](https://github.com/adobe/aem-sidekick/issues/634)) ([e861fdb](https://github.com/adobe/aem-sidekick/commit/e861fdb8fc4e7172cd26dd08840e0aa90442e455))
+
+## [7.14.1](https://github.com/adobe/aem-sidekick/compare/v7.14.0...v7.14.1) (2025-07-14)
+
+
+### Bug Fixes
+
+* only update existing project if status 200 ([#633](https://github.com/adobe/aem-sidekick/issues/633)) ([55b8342](https://github.com/adobe/aem-sidekick/commit/55b8342efeb0306147863cb9deec60a4869c9eaa))
+
 # [7.14.0](https://github.com/adobe/aem-sidekick/compare/v7.13.6...v7.14.0) (2025-07-10)
 
 

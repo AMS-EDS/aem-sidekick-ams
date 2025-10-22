@@ -175,6 +175,30 @@ async function getSites(_, { tab }) {
 }
 
 /**
+ * Adds a configured site.
+ * @returns {Promise<boolean>} True if the site was added, else false
+ */
+async function addSite({ config }, { tab }) {
+  const { origin } = new URL(tab.url);
+
+  if (!isTrustedOrigin(origin)) {
+    return false; // don't add anything
+  }
+
+  const owner = config.owner || config.org;
+  const repo = config.repo || config.site;
+  if (owner && repo) {
+    return addProject({
+      owner,
+      repo,
+    });
+  } else {
+    log.warn('addSite: missing required parameters org (or owner) and site (or repo)');
+    return false;
+  }
+}
+
+/**
  * Updates a configured site.
  * @returns {Promise<boolean>} True if the site was updated, else false
  */
@@ -523,7 +547,10 @@ async function updateProject(_, { config }) {
       });
 
     if (hasChanges) {
-      await updateProjectConfig(config);
+      await updateProjectConfig({
+        ...existingProject,
+        ...config,
+      });
     }
   }
 }
@@ -553,6 +580,7 @@ export const externalActions = {
   getSites,
   launch,
   login,
+  addSite,
   updateSite,
   removeSite,
   updateAuthToken,

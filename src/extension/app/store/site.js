@@ -252,6 +252,7 @@ export class SiteStore {
       host,
       project = '',
       specialViews,
+      wordSaveDelay,
       transient = false,
       scriptUrl = 'https://www.gov-aem.live/tools/sidekick/index.js',
     } = config;
@@ -302,11 +303,13 @@ export class SiteStore {
     this.project = project;
     this.devUrl = devUrl;
     this.lang = lang || getLanguage();
+    this.wordSaveDelay = Number.isInteger(wordSaveDelay) && wordSaveDelay > 0
+      ? wordSaveDelay : 1500;
     this.transient = transient;
     this.setReady();
 
     // send config to service worker to update sync storage
-    if (!this.transient && this.owner && this.repo) {
+    if (!this.transient && this.status === 200 && this.owner && this.repo) {
       chrome.runtime.sendMessage({
         action: 'updateProject',
         config: {
@@ -352,6 +355,7 @@ export class SiteStore {
       adminVersion: this.adminVersion,
       lang: this.lang,
       views: this.views,
+      wordSaveDelay: this.wordSaveDelay,
     };
   }
 }
