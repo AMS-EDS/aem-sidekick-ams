@@ -239,6 +239,68 @@ describe('Test actions', () => {
     expect(resp).to.deep.equal([]);
   });
 
+  it('external: addSite', async () => {
+    const addConfig = { owner: 'foo', repo: 'bar' };
+
+    const resultingConfig = {
+      ...addConfig,
+      contentSourceUrl: 'https://foo.bar/content/source',
+      previewHost: 'https://preview.foo.bar',
+      liveHost: 'https://live.foo.bar',
+      reviewHost: 'https://review.foo.bar',
+      host: 'https://foo.bar',
+      project: 'Foo Bar',
+    };
+
+    const getStub = sandbox.stub(chrome.storage.sync, 'get');
+    const setStub = sandbox.stub(chrome.storage.sync, 'set');
+    getStub.withArgs('projects').resolves({
+      projects: [],
+    });
+    fetchMock.get('https://admin.gov-aem.page/sidekick/foo/bar/main/config.json', {
+      status: 200,
+      body: resultingConfig,
+    });
+
+    let resp;
+
+    // trusted actor
+    resp = await externalActions.addSite({
+      config: addConfig,
+    }, { tab: mockTab('https://tools.aem.live/foo') });
+    expect(setStub.called).to.be.true;
+    expect(setStub.calledWith({ projects: ['foo/bar'] })).to.be.true;
+    expect(setStub.calledWithMatch({
+      'foo/bar': {
+        previewHost: 'https://preview.foo.bar',
+      },
+    })).to.be.true;
+    expect(resp).to.be.true;
+
+    // trusted actor with org and site
+    resp = await externalActions.addSite({
+      config: { org: addConfig.owner, site: addConfig.repo },
+    }, { tab: mockTab('https://tools.aem.live/foo') });
+    expect(setStub.called).to.be.true;
+    expect(resp).to.be.true;
+
+    setStub.resetHistory();
+
+    // trusted actor with missing owner and repo
+    resp = await externalActions.addSite({
+      config: { project: 'Foo Baz' },
+    }, { tab: mockTab('https://tools.aem.live/foo') });
+    expect(setStub.called).to.be.false;
+    expect(resp).to.be.false;
+
+    // untrusted actor
+    resp = await externalActions.addSite({
+      config: addConfig,
+    }, { tab: mockTab('https://evil.live') });
+    expect(setStub.called).to.be.false;
+    expect(resp).to.be.false;
+  });
+
   it('external: updateSite', async () => {
     const oldConfig = { owner: 'foo', repo: 'bar', project: 'Foo Bar' };
     const newConfig = { owner: 'foo', repo: 'bar', project: 'New Foo Bar' };
@@ -304,7 +366,6 @@ describe('Test actions', () => {
     resp = await externalActions.removeSite({
       config,
     }, { tab: mockTab('https://tools.aem.live/foo') });
-    console.log('removeSite', removeStub.args, resp); // eslint-disable-line no-console
     expect(removeStub.called).to.be.true;
     expect(setStub.calledWith({ projects: [] })).to.be.true;
     expect(resp).to.be.true;
@@ -567,6 +628,25 @@ describe('Test actions', () => {
       url: 'https://www.example.com/',
     }));
     expect(set.notCalled).to.be.true;
+  });
+
+  it('internal: enableDisableProject shows correct project name in notification', async () => {
+    const sendMessageStub = sandbox.spy(chrome.tabs, 'sendMessage');
+    const i18nSpy = sandbox.spy(chrome.i18n, 'getMessage');
+
+    // disable project - should show notification with project name
+    await internalActions.enableDisableProject(mockTab('https://main--bar--foo.hlx.page/', {
+      id: 1,
+    }));
+
+    expect(sendMessageStub.calledWithMatch(1, {
+      action: 'show_notification',
+      headline: 'i18n?config_project_disabled_headline',
+      message: 'i18n?config_project_disabled|foo/bar',
+    })).to.be.true;
+
+    // verify the project name (foo/bar) is used in the message
+    expect(i18nSpy.calledWith('config_project_disabled', 'foo/bar')).to.be.true;
   });
 
   describe('internal: importProjects', () => {
@@ -1044,6 +1124,60 @@ describe('Test actions', () => {
       await internalActions.updateProject({}, { config: project });
 
       expect(updateProjectStub.called).to.be.false;
+    });
+
+    it('preserves existing project properties when updating', async () => {
+      const existingProject = {
+        id: 'adobe/business-website',
+        owner: 'adobe',
+        repo: 'business-website',
+        ref: 'main',
+        project: 'Business Website',
+        giturl: 'https://github.com/adobe/business-website/tree/main',
+        host: 'business-website.example.com',
+        previewHost: 'preview.business-website.example.com',
+        liveHost: 'live.business-website.example.com',
+        mountpoints: ['/content/business-website'],
+        disabled: false,
+      };
+
+      const updateConfig = {
+        owner: 'adobe',
+        repo: 'business-website',
+        ref: 'main',
+        previewHost: 'new-preview.business-website.example.com', // only this property changes
+      };
+
+      // mock getProject to return existing project
+      const getStub = sandbox.stub(chrome.storage.sync, 'get');
+      getStub.withArgs('projects').resolves({ projects: ['adobe/business-website'] });
+      getStub.withArgs('adobe/business-website').resolves({ 'adobe/business-website': existingProject });
+
+      // mock updateProject to verify it's called with preserved properties
+      const updateProjectStub = sandbox.stub(chrome.storage.sync, 'set')
+        .resolves();
+
+      await internalActions.updateProject({}, { config: updateConfig });
+
+      expect(updateProjectStub.calledOnce).to.be.true;
+
+      // Verify that the updated project preserves all existing properties
+      const updatedProject = updateProjectStub.firstCall.args[0]['adobe/business-website'];
+
+      // Essential properties should be preserved
+      expect(updatedProject.id).to.equal('adobe/business-website');
+      expect(updatedProject.owner).to.equal('adobe');
+      expect(updatedProject.repo).to.equal('business-website');
+      expect(updatedProject.ref).to.equal('main');
+      expect(updatedProject.project).to.equal('Business Website');
+      expect(updatedProject.giturl).to.equal('https://github.com/adobe/business-website/tree/main');
+      expect(updatedProject.host).to.equal('business-website.example.com');
+      expect(updatedProject.liveHost).to.equal('live.business-website.example.com');
+      expect(updatedProject.mountpoints).to.deep.equal(['/content/business-website']);
+      expect(updatedProject.disabled).to.equal(false);
+
+      // The updated property should be changed
+      expect(updatedProject.previewHost).to.equal('new-preview.business-website.example.com');
     });
 
     it('saves document in sharepoint', async () => {
