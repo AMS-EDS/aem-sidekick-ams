@@ -26,7 +26,7 @@ window.chrome = chromeMock;
 
 const TABS = {
   0: mockTab(null, { id: '0' }),
-  1: mockTab('https://main--blog--adobe.hlx.page/', { id: '1' }),
+  1: mockTab('https://main--blog--adobe.gov-aem.page/', { id: '1' }),
   2: mockTab('https://www.example.com/', { id: '2' }),
   3: mockTab('http://localhost:2001/', { id: '3' }),
   4: mockTab('http://github.com/foo/bar', { id: '4' }),
