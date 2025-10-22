@@ -1,3 +1,24 @@
+## [7.13.1](https://github.com/adobe/aem-sidekick/compare/v7.13.0...v7.13.1) (2025-06-13)
+
+
+### Bug Fixes
+
+* also inject site token in sub frames ([#598](https://github.com/adobe/aem-sidekick/issues/598)) ([f6b672d](https://github.com/adobe/aem-sidekick/commit/f6b672dcea66a9bd26a0d4e3b2e058cf7d23db5b))
+
+# [7.13.0](https://github.com/adobe/aem-sidekick/compare/v7.12.0...v7.13.0) (2025-06-11)
+
+
+### Features
+
+* force word to save on preview ([#588](https://github.com/adobe/aem-sidekick/issues/588)) ([e182fc4](https://github.com/adobe/aem-sidekick/commit/e182fc441d3318aa958445c5d78ae87f67a11121)), closes [#596](https://github.com/adobe/aem-sidekick/issues/596)
+
+# [7.12.0](https://github.com/adobe/aem-sidekick/compare/v7.11.4...v7.12.0) (2025-06-10)
+
+
+### Features
+
+* project management and json diff ([9c5602a](https://github.com/adobe/aem-sidekick/commit/9c5602aa09d01d88c86df82cd97331c27f74146b))
+
 ## [7.11.4](https://github.com/adobe/aem-sidekick/compare/v7.11.3...v7.11.4) (2025-06-06)
 
 
