@@ -672,6 +672,9 @@
     "import": {
       "message": "Import"
     },
+    "snapshot_update_success": {
+      "message": "Snapshot successfully updated, opening Review..."
+    },
     "AEM_BACKEND_FETCH_FAILED": {
       "message": "Unable to fetch $1 from $2."
     },
@@ -694,9 +697,9 @@
       "message": "Unable to preview $1: file type not supported"
     },
     "AEM_BACKEND_NO_CONTENT_TYPE": {
-      "message": "Content type header is missing"
+      "message": "Unable to preview $1: content type header is missing"
     },
-    "AEM_BACKEND_JSON_INVALD": {
+    "AEM_BACKEND_JSON_INVALID": {
       "message": "Unable to preview $2: invalid JSON"
     },
     "AEM_BACKEND_FILE_EMPTY": {
@@ -733,9 +736,9 @@
       "message": "Unable to preview $1: SVG is larger than 20KB"
     },
     "AEM_BACKEND_IMAGE_TOO_BIG": {
-      "message": "Unable to preview $1: Image is larger than 10MB"
+      "message": "Unable to preview $1: image is larger than 20MB"
     },
     "AEM_BACKEND_DOC_IMAGE_TOO_BIG": {
-      "message": "Unable to preview $1: Contained image larger than 10MB"
+      "message": "Unable to preview $1: contained image larger than 20MB"
     }
 }

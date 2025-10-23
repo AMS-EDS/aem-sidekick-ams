@@ -1,3 +1,45 @@
+## [7.19.3](https://github.com/adobe/aem-sidekick/compare/v7.19.2...v7.19.3) (2025-09-17)
+
+
+### Bug Fixes
+
+* **env-switcher:** source label always falls back on contentSourceType ([#689](https://github.com/adobe/aem-sidekick/issues/689)) ([f91beb8](https://github.com/adobe/aem-sidekick/commit/f91beb865dd7ed370ad1fc07eb75c0473078466a))
+
+## [7.19.2](https://github.com/adobe/aem-sidekick/compare/v7.19.1...v7.19.2) (2025-09-17)
+
+
+### Bug Fixes
+
+* columns key is no longer supported in the OOTB json ([dae88e7](https://github.com/adobe/aem-sidekick/commit/dae88e7113995ffd1481670cb8ce19f06e5fd4c2))
+
+## [7.19.1](https://github.com/adobe/aem-sidekick/compare/v7.19.0...v7.19.1) (2025-09-15)
+
+
+### Bug Fixes
+
+* **env-switcher:** define source label first based on sourceLocation,… ([#683](https://github.com/adobe/aem-sidekick/issues/683)) ([81bf03e](https://github.com/adobe/aem-sidekick/commit/81bf03e38a4a12549d86f5dc1067a340d08289ae))
+
+# [7.19.0](https://github.com/adobe/aem-sidekick/compare/v7.18.2...v7.19.0) (2025-09-15)
+
+
+### Features
+
+* RC 20250910 ([fd23442](https://github.com/adobe/aem-sidekick/commit/fd23442ba7c2d74b7789a5f0b96a1e2da9d3c9d0))
+
+## [7.18.2](https://github.com/adobe/aem-sidekick/compare/v7.18.1...v7.18.2) (2025-09-05)
+
+
+### Bug Fixes
+
+* error code typos ([#673](https://github.com/adobe/aem-sidekick/issues/673)) ([fe4dfda](https://github.com/adobe/aem-sidekick/commit/fe4dfdaa9f7707d66a00b3b161451897ee5881b3))
+
+## [7.18.1](https://github.com/adobe/aem-sidekick/compare/v7.18.0...v7.18.1) (2025-09-05)
+
+
+### Bug Fixes
+
+* add project hints for gdrive lookup ([8a8ba09](https://github.com/adobe/aem-sidekick/commit/8a8ba09218187b0c5bcaaffa7c3cb78b567139ea))
+
 # [7.18.0](https://github.com/adobe/aem-sidekick/compare/v7.17.1...v7.18.0) (2025-09-02)
 
 
