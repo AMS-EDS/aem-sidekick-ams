@@ -57,7 +57,7 @@ export async function configureAuthAndCorsHeaders() {
             excludedInitiatorDomains: ['da.live'],
             regexFilter: `^https://${adminHost}/(config/${owner}\\.json|[a-z]+/${owner}/.*)`,
             requestDomains: [adminHost],
-            requestMethods: ['get', 'post', 'delete'],
+            requestMethods: ['get', 'put', 'post', 'delete'],
             resourceTypes: ['xmlhttprequest'],
           },
         });
@@ -109,7 +109,7 @@ export async function configureAuthAndCorsHeaders() {
             }],
           },
           condition: {
-            regexFilter: `^https://[a-z0-9-]+--${repo}--${owner}\\.gov-aem\\.(page|live|reviews)/.*`,
+            regexFilter: `^(https://[a-z0-9-]+--${repo}--${owner}\\.gov-aem\\.(page|live|reviews)/.*|http://localhost:3000/.*)`,
             requestMethods: ['get', 'post'],
             resourceTypes: [
               'main_frame',
@@ -238,7 +238,7 @@ export async function updateUserAgent() {
     condition: {
       regexFilter: `^https://${adminHost}/.*`,
       requestDomains: [adminHost],
-      requestMethods: ['get', 'post', 'delete'],
+      requestMethods: ['get', 'put', 'post', 'delete'],
       resourceTypes: ['xmlhttprequest'],
     },
   }];

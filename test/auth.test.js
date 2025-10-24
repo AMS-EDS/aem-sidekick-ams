@@ -108,6 +108,7 @@ describe('Test auth', () => {
             ],
             requestMethods: [
               'get',
+              'put',
               'post',
               'delete',
             ],
@@ -191,6 +192,7 @@ describe('Test auth', () => {
             ],
             requestMethods: [
               'get',
+              'put',
               'post',
               'delete',
             ],
@@ -349,6 +351,7 @@ describe('Test auth', () => {
             ],
             requestMethods: [
               'get',
+              'put',
               'post',
               'delete',
             ],
@@ -398,7 +401,30 @@ describe('Test auth', () => {
             ],
           },
           condition: {
-            regexFilter: '^https://[a-z0-9-]+--site--test\\.gov-aem\\.(page|live|reviews)/.*',
+            regexFilter: sinon.match((value) => {
+              const regex = new RegExp(value);
+              // Should match aem.page, aem.live, and aem.reviews URLs
+              const shouldMatch = [
+                // AMS URLs - gov-aem.page, gov-aem.live, gov-aem.reviews
+                'https://main--site--test.gov-aem.page/',
+                'https://main--site--test.gov-aem.page/index',
+                'https://preview--site--test.gov-aem.live/document',
+                'https://feature-branch--site--test.gov-aem.reviews/test',
+                // Should match localhost:3000
+                'http://localhost:3000/',
+                'http://localhost:3000/index',
+              ];
+              const shouldNotMatch = [
+                'https://example.com/',
+                'http://localhost/', // no port
+                'http://localhost:8080/', // different port
+                'https://localhost:3000/', // https instead of http
+                'http://127.0.0.1:3000/', // IP instead of localhost
+                'http://localhost:3000', // no trailing slash
+              ];
+              return shouldMatch.every((url) => regex.test(url))
+                && shouldNotMatch.every((url) => !regex.test(url));
+            }),
             requestMethods: [
               'get',
               'post',
@@ -453,7 +479,7 @@ describe('Test auth', () => {
         condition: {
           regexFilter: '^https://admin.gov-aem.page/.*',
           requestDomains: ['admin.gov-aem.page'],
-          requestMethods: ['get', 'post', 'delete'],
+          requestMethods: ['get', 'put', 'post', 'delete'],
           resourceTypes: ['xmlhttprequest'],
         },
       }],
