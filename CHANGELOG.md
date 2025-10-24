@@ -1,3 +1,31 @@
+## [7.22.2](https://github.com/adobe/aem-sidekick/compare/v7.22.1...v7.22.2) (2025-10-23)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#703](https://github.com/adobe/aem-sidekick/issues/703)) ([ab5e96d](https://github.com/adobe/aem-sidekick/commit/ab5e96ddf9a666a9adc0590b1b56558d15af5a4d))
+
+## [7.22.1](https://github.com/adobe/aem-sidekick/compare/v7.22.0...v7.22.1) (2025-10-23)
+
+
+### Bug Fixes
+
+* **login:** display email only if no name ([#707](https://github.com/adobe/aem-sidekick/issues/707)) ([d9bdc73](https://github.com/adobe/aem-sidekick/commit/d9bdc7383439ada3c0b78f033f3072e1de72aa65)), closes [#708](https://github.com/adobe/aem-sidekick/issues/708)
+
+# [7.22.0](https://github.com/adobe/aem-sidekick/compare/v7.21.0...v7.22.0) (2025-10-22)
+
+
+### Features
+
+* add resize popover and palette APIs ([#705](https://github.com/adobe/aem-sidekick/issues/705)) ([573c464](https://github.com/adobe/aem-sidekick/commit/573c46490ffef34953e58764008d8caec7c0cb7d))
+
+# [7.21.0](https://github.com/adobe/aem-sidekick/compare/v7.20.1...v7.21.0) (2025-10-21)
+
+
+### Features
+
+* add palette and popover close APIs ([#704](https://github.com/adobe/aem-sidekick/issues/704)) ([9ab6ed6](https://github.com/adobe/aem-sidekick/commit/9ab6ed64d17afd98a582d0c757c43ddeca9c9b48))
+
 ## [7.20.1](https://github.com/adobe/aem-sidekick/compare/v7.20.0...v7.20.1) (2025-10-08)
 
 
