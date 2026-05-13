@@ -21,6 +21,23 @@ import replace from '@rollup/plugin-replace';
 import { babel } from '@rollup/plugin-babel';
 import sidekickManifestBuildPlugin from './build/build.js';
 
+const hlxPage = process.env.HLX_PROD_SERVER_HOST_PAGE;
+const hlxLive = process.env.HLX_PROD_SERVER_HOST_LIVE; // confirms env file was fully sourced
+
+if (!hlxPage || !hlxLive) {
+  throw new Error(
+    '\nDomain env vars not set.\nRun: source ../ams-eds-terraform/environments/<env-name>.env  before building.\n',
+  );
+}
+
+if (!hlxPage.endsWith('.page')) {
+  throw new Error(
+    `\nHLX_PROD_SERVER_HOST_PAGE must end with '.page' (got: '${hlxPage}').\n`,
+  );
+}
+
+const domainPrefix = hlxPage.replace(/\.page$/, '');
+
 function shared(browser, path = '') {
   return {
     output: {
@@ -43,13 +60,19 @@ function commonPlugins() {
     nodeResolve(),
     /** Transform decorators with babel */
     babel({ babelHelpers: 'bundled' }),
+    /** Replace domain and environment variables before minification */
+    replace({
+      preventAssignment: true,
+      values: {
+        'process.env.NODE_ENV': JSON.stringify('production'),
+        'gov-aem': domainPrefix,
+      },
+      delimiters: ['', ''], // Remove default delimiters to match within strings
+    }),
     /** Minify JS, compile JS to a lower language target */
     esbuild({
       minify: true,
       target: ['chrome64'],
-    }),
-    replace({
-      'process.env.NODE_ENV': JSON.stringify('production'),
     }),
   ];
 }
@@ -61,7 +84,21 @@ function extensionPlugins(browser) {
     /** Copy static assets */
     copy({
       targets: [
-        { src: 'src/extension/*', ignore: ['src/extension/app', 'src/extension/views', 'src/extension/types'], dest: `./dist/${browser}` },
+        // Root-level JS files — apply domain replacement (transform requires file globs, not dirs)
+        {
+          src: 'src/extension/*.js',
+          dest: `./dist/${browser}`,
+          transform: (contents) => contents.toString().replaceAll('gov-aem', domainPrefix),
+        },
+        // utils/ JS files — apply domain replacement
+        {
+          src: 'src/extension/utils/*.js',
+          dest: `./dist/${browser}/utils`,
+          transform: (contents) => contents.toString().replaceAll('gov-aem', domainPrefix),
+        },
+        // Non-JS assets and directories — copy verbatim
+        { src: ['src/extension/_locales', 'src/extension/icons', 'src/extension/lib'], dest: `./dist/${browser}` },
+        { src: ['src/extension/*.json', 'src/extension/*.html'], dest: `./dist/${browser}` },
         { src: 'src/extension/views/json/json.html', dest: `./dist/${browser}/views/json` },
         { src: 'src/extension/views/login/login.html', dest: `./dist/${browser}/views/login` },
         { src: 'src/extension/views/doc-source', dest: `./dist/${browser}/views/` },
