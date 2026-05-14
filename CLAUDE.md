@@ -11,6 +11,10 @@ AMS fork of the AEM Sidekick browser extension. Provides the author toolbar for 
 - Browser extension (not a Lambda or Worker)
 - Build output in `build/` and `dist/`
 
+## Git Commits
+
+Do not add `Co-Authored-By` lines to commit messages.
+
 ## Branch Strategy
 
 - `main` — upstream mirror. Do not commit here.
