@@ -23,8 +23,7 @@
  * @type {string}
  */
 // export const ADMIN_ORIGIN = 'https://admin.hlx.page';
-export const ADMIN_ORIGIN = 'https://admin.gov-aem.page';
-// export const ADMIN_ORIGIN = 'https://admin.adobems-aem.page';
+export const ADMIN_ORIGIN = `https://admin.${process.env.HLX_PROD_SERVER_HOST_PAGE}`;
 
 /**
  * Creates an Admin API URL for an API and path.

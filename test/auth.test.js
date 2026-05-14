@@ -102,9 +102,9 @@ describe('Test auth', () => {
           },
           condition: {
             excludedInitiatorDomains: ['da.live'],
-            regexFilter: '^https://admin.gov-aem.page/(config/test\\.json|[a-z]+/test/.*)',
+            regexFilter: `^https://admin.${process.env.HLX_PROD_SERVER_HOST_PAGE}/(config/test\\.json|[a-z]+/test/.*)`,
             requestDomains: [
-              'admin.gov-aem.page',
+              `admin.${process.env.HLX_PROD_SERVER_HOST_PAGE}`,
             ],
             requestMethods: [
               'get',
@@ -131,10 +131,10 @@ describe('Test auth', () => {
             ],
           },
           condition: {
-            regexFilter: '^https://[0-9a-z-]+--[0-9a-z-]+--test\\.gov-aem\\.(page|live|reviews)/.*',
+            regexFilter: `^https://[0-9a-z-]+--[0-9a-z-]+--test\\.${process.env.HLX_DOMAIN_PREFIX}\\.(page|live|reviews)/.*`,
             initiatorDomains: [
-              'tools.gov-aem.live',
-              'labs.gov-aem.live',
+              `tools.${process.env.HLX_PROD_SERVER_HOST_LIVE}`,
+              `labs.${process.env.HLX_PROD_SERVER_HOST_LIVE}`,
             ],
             requestMethods: [
               'get',
@@ -186,9 +186,9 @@ describe('Test auth', () => {
           },
           condition: {
             excludedInitiatorDomains: ['da.live'],
-            regexFilter: '^https://admin.gov-aem.page/(config/test\\.json|[a-z]+/test/.*)',
+            regexFilter: `^https://admin.${process.env.HLX_PROD_SERVER_HOST_PAGE}/(config/test\\.json|[a-z]+/test/.*)`,
             requestDomains: [
-              'admin.gov-aem.page',
+              `admin.${process.env.HLX_PROD_SERVER_HOST_PAGE}`,
             ],
             requestMethods: [
               'get',
@@ -215,10 +215,10 @@ describe('Test auth', () => {
             ],
           },
           condition: {
-            regexFilter: '^https://[0-9a-z-]+--[0-9a-z-]+--test\\.gov-aem\\.(page|live|reviews)/.*',
+            regexFilter: `^https://[0-9a-z-]+--[0-9a-z-]+--test\\.${process.env.HLX_DOMAIN_PREFIX}\\.(page|live|reviews)/.*`,
             initiatorDomains: [
-              'tools.gov-aem.live',
-              'labs.gov-aem.live',
+              `tools.${process.env.HLX_PROD_SERVER_HOST_LIVE}`,
+              `labs.${process.env.HLX_PROD_SERVER_HOST_LIVE}`,
             ],
             requestMethods: [
               'get',
@@ -244,8 +244,8 @@ describe('Test auth', () => {
           condition: {
             regexFilter: '^https://production-host.com/.*',
             initiatorDomains: [
-              'tools.gov-aem.live',
-              'labs.gov-aem.live',
+              `tools.${process.env.HLX_PROD_SERVER_HOST_LIVE}`,
+              `labs.${process.env.HLX_PROD_SERVER_HOST_LIVE}`,
             ],
             requestMethods: [
               'get',
@@ -271,8 +271,8 @@ describe('Test auth', () => {
           condition: {
             regexFilter: '^https://custom-preview.com/.*',
             initiatorDomains: [
-              'tools.gov-aem.live',
-              'labs.gov-aem.live',
+              `tools.${process.env.HLX_PROD_SERVER_HOST_LIVE}`,
+              `labs.${process.env.HLX_PROD_SERVER_HOST_LIVE}`,
             ],
             requestMethods: [
               'get',
@@ -298,8 +298,8 @@ describe('Test auth', () => {
           condition: {
             regexFilter: '^https://custom-live.com/.*',
             initiatorDomains: [
-              'tools.gov-aem.live',
-              'labs.gov-aem.live',
+              `tools.${process.env.HLX_PROD_SERVER_HOST_LIVE}`,
+              `labs.${process.env.HLX_PROD_SERVER_HOST_LIVE}`,
             ],
             requestMethods: [
               'get',
@@ -345,9 +345,9 @@ describe('Test auth', () => {
           },
           condition: {
             excludedInitiatorDomains: ['da.live'],
-            regexFilter: '^https://admin.gov-aem.page/(config/test\\.json|[a-z]+/test/.*)',
+            regexFilter: `^https://admin.${process.env.HLX_PROD_SERVER_HOST_PAGE}/(config/test\\.json|[a-z]+/test/.*)`,
             requestDomains: [
-              'admin.gov-aem.page',
+              `admin.${process.env.HLX_PROD_SERVER_HOST_PAGE}`,
             ],
             requestMethods: [
               'get',
@@ -374,10 +374,10 @@ describe('Test auth', () => {
             ],
           },
           condition: {
-            regexFilter: '^https://[0-9a-z-]+--[0-9a-z-]+--test\\.gov-aem\\.(page|live|reviews)/.*',
+            regexFilter: `^https://[0-9a-z-]+--[0-9a-z-]+--test\\.${process.env.HLX_DOMAIN_PREFIX}\\.(page|live|reviews)/.*`,
             initiatorDomains: [
-              'tools.gov-aem.live',
-              'labs.gov-aem.live',
+              `tools.${process.env.HLX_PROD_SERVER_HOST_LIVE}`,
+              `labs.${process.env.HLX_PROD_SERVER_HOST_LIVE}`,
             ],
             requestMethods: [
               'get',
@@ -406,10 +406,10 @@ describe('Test auth', () => {
               // Should match aem.page, aem.live, and aem.reviews URLs
               const shouldMatch = [
                 // AMS URLs - gov-aem.page, gov-aem.live, gov-aem.reviews
-                'https://main--site--test.gov-aem.page/',
-                'https://main--site--test.gov-aem.page/index',
-                'https://preview--site--test.gov-aem.live/document',
-                'https://feature-branch--site--test.gov-aem.reviews/test',
+                `https://main--site--test.${process.env.HLX_PROD_SERVER_HOST_PAGE}/`,
+                `https://main--site--test.${process.env.HLX_PROD_SERVER_HOST_PAGE}/index`,
+                `https://preview--site--test.${process.env.HLX_PROD_SERVER_HOST_LIVE}/document`,
+                `https://feature-branch--site--test.${process.env.HLX_DOMAIN_PREFIX}.reviews/test`,
                 // Should match localhost:3000
                 'http://localhost:3000/',
                 'http://localhost:3000/index',
@@ -477,8 +477,8 @@ describe('Test auth', () => {
           }],
         },
         condition: {
-          regexFilter: '^https://admin.gov-aem.page/.*',
-          requestDomains: ['admin.gov-aem.page'],
+          regexFilter: `^https://admin.${process.env.HLX_PROD_SERVER_HOST_PAGE}/.*`,
+          requestDomains: [`admin.${process.env.HLX_PROD_SERVER_HOST_PAGE}`],
           requestMethods: ['get', 'put', 'post', 'delete'],
           resourceTypes: ['xmlhttprequest'],
         },

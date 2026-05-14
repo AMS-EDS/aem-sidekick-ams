@@ -254,11 +254,11 @@ export class SiteStore {
       specialViews,
       wordSaveDelay,
       transient = false,
-      scriptUrl = 'https://www.gov-aem.live/tools/sidekick/index.js',
+      scriptUrl = `https://www.${process.env.HLX_PROD_SERVER_HOST_LIVE}/tools/sidekick/index.js`,
     } = config;
     const publicHost = host && host.startsWith('http') ? new URL(host).host : host;
     const hostPrefix = owner && repo ? `${ref}--${repo}--${owner}` : null;
-    const domain = previewHost?.endsWith('.aem.page') ? 'aem' : 'gov-aem';
+    const domain = previewHost?.endsWith('.aem.page') ? 'aem' : process.env.HLX_DOMAIN_PREFIX;
     const stdInnerHost = hostPrefix ? `${hostPrefix}.${domain}.page` : null;
     const stdOuterHost = hostPrefix ? `${hostPrefix}.${domain}.live` : null;
     const stdReviewHost = hostPrefix ? `${hostPrefix}.${domain}.reviews` : null;

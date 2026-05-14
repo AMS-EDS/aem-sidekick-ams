@@ -25,13 +25,13 @@ describe('helix-admin', () => {
     it('creates a correct URL with all parameters', () => {
       // @ts-ignore
       const url = createAdminUrl(siteStore, 'preview', '/path/to/resource');
-      expect(url.toString()).to.equal('https://admin.gov-aem.page/preview/ownerName/repoName/refName/path/to/resource');
+      expect(url.toString()).to.equal(`https://admin.${process.env.HLX_PROD_SERVER_HOST_PAGE}/preview/ownerName/repoName/refName/path/to/resource`);
     });
 
     it('creates a correct URL with default path', () => {
       // @ts-ignore
       const url = createAdminUrl(siteStore, 'preview');
-      expect(url.toString()).to.equal('https://admin.gov-aem.page/preview/ownerName/repoName/refName');
+      expect(url.toString()).to.equal(`https://admin.${process.env.HLX_PROD_SERVER_HOST_PAGE}/preview/ownerName/repoName/refName`);
     });
 
     it('includes adminVersion when specified', () => {
@@ -64,7 +64,7 @@ describe('helix-admin', () => {
       await callAdmin(siteStore, 'preview', '/path/to/resource');
       const url = fetchStub.getCall(0).args[0].toString();
       const options = fetchStub.getCall(0).args[1];
-      expect(url).to.equal('https://admin.gov-aem.page/preview/ownerName/repoName/refName/path/to/resource');
+      expect(url).to.equal(`https://admin.${process.env.HLX_PROD_SERVER_HOST_PAGE}/preview/ownerName/repoName/refName/path/to/resource`);
       expect(options.method).to.equal('get');
     });
 

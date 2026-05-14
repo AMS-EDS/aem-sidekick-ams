@@ -67,7 +67,7 @@ describe('AEM Sidekick - SSA', () => {
     expect(spTheme).to.exist;
 
     const { location } = sidekick;
-    expect(location.href).to.eq('https://main--aem-boilerplate--adobe.gov-aem.page/');
+    expect(location.href).to.eq(`https://main--aem-boilerplate--adobe.${process.env.HLX_PROD_SERVER_HOST_PAGE}/`);
     expect(sidekickTest.rumStub.called).to.be.true;
     expect(sidekickTest.rumStub.calledWithMatch('top', {
       source: 'sidekick',

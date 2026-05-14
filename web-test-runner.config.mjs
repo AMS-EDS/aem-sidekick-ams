@@ -17,6 +17,17 @@ import rollupBabel from '@rollup/plugin-babel';
 // @ts-ignore
 const babel = fromRollup(rollupBabel);
 
+const hlxPage = process.env.HLX_PROD_SERVER_HOST_PAGE;
+const hlxLive = process.env.HLX_PROD_SERVER_HOST_LIVE;
+
+if (!hlxPage || !hlxLive) {
+  throw new Error(
+    '\nDomain env vars not set.\nRun: source ../ams-eds-terraform/environments/<env-name>.env  before testing.\n',
+  );
+}
+
+const domainPrefix = hlxPage.replace(/\.page$/, '');
+
 export default {
   nodeResolve: true,
   port: 2000,
@@ -49,7 +60,7 @@ export default {
   testRunnerHtml: (testFramework) => `
   <html>
     <body>
-      <script>window.process = { env: { NODE_ENV: "development" } }</script>
+      <script>window.process = { env: { NODE_ENV: "development", HLX_PROD_SERVER_HOST_PAGE: "${hlxPage}", HLX_PROD_SERVER_HOST_LIVE: "${hlxLive}", HLX_DOMAIN_PREFIX: "${domainPrefix}" } }</script>
       <script type="module" src="${testFramework}"></script>
     </body>
   </html>`,

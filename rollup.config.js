@@ -65,9 +65,10 @@ function commonPlugins() {
       preventAssignment: true,
       values: {
         'process.env.NODE_ENV': JSON.stringify('production'),
-        'gov-aem': domainPrefix,
+        'process.env.HLX_PROD_SERVER_HOST_PAGE': JSON.stringify(hlxPage),
+        'process.env.HLX_PROD_SERVER_HOST_LIVE': JSON.stringify(hlxLive),
+        'process.env.HLX_DOMAIN_PREFIX': JSON.stringify(domainPrefix),
       },
-      delimiters: ['', ''], // Remove default delimiters to match within strings
     }),
     /** Minify JS, compile JS to a lower language target */
     esbuild({
@@ -77,6 +78,18 @@ function commonPlugins() {
   ];
 }
 
+function injectDomainVars(src) {
+  /* eslint-disable no-template-curly-in-string */
+  return src
+    .replaceAll('${process.env.HLX_PROD_SERVER_HOST_PAGE}', hlxPage)
+    .replaceAll('${process.env.HLX_PROD_SERVER_HOST_LIVE}', hlxLive)
+    .replaceAll('${process.env.HLX_DOMAIN_PREFIX}', domainPrefix)
+    /* eslint-enable no-template-curly-in-string */
+    .replaceAll('process.env.HLX_PROD_SERVER_HOST_PAGE', JSON.stringify(hlxPage))
+    .replaceAll('process.env.HLX_PROD_SERVER_HOST_LIVE', JSON.stringify(hlxLive))
+    .replaceAll('process.env.HLX_DOMAIN_PREFIX', JSON.stringify(domainPrefix));
+}
+
 function extensionPlugins(browser) {
   return [
     /** Bundle assets references via import.meta.url */
@@ -84,17 +97,17 @@ function extensionPlugins(browser) {
     /** Copy static assets */
     copy({
       targets: [
-        // Root-level JS files — apply domain replacement (transform requires file globs, not dirs)
+        // Root-level JS files — inject domain env vars (transform requires file globs, not dirs)
         {
           src: 'src/extension/*.js',
           dest: `./dist/${browser}`,
-          transform: (contents) => contents.toString().replaceAll('gov-aem', domainPrefix),
+          transform: (contents) => injectDomainVars(contents.toString()),
         },
-        // utils/ JS files — apply domain replacement
+        // utils/ JS files — inject domain env vars
         {
           src: 'src/extension/utils/*.js',
           dest: `./dist/${browser}/utils`,
-          transform: (contents) => contents.toString().replaceAll('gov-aem', domainPrefix),
+          transform: (contents) => injectDomainVars(contents.toString()),
         },
         // Non-JS assets and directories — copy verbatim
         { src: ['src/extension/_locales', 'src/extension/icons', 'src/extension/lib'], dest: `./dist/${browser}` },
