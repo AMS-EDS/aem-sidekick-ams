@@ -190,7 +190,7 @@ export function mockHelixEnvironment(
   environment = HelixMockEnvironments.PREVIEW,
   contentType = HelixMockContentType.DOC,
   location = undefined,
-  sld = 'gov-aem') {
+  sld = process.env.HLX_DOMAIN_PREFIX) {
   if (!environment) {
     throw new Error('environment is required');
   }

@@ -57,22 +57,22 @@ import { defaultOnboardingResponse, onboardingHtml } from './fixtures/onboarding
 /**
  * Status API
  */
-export const defaultStatusUrl = 'https://admin.gov-aem.page/status/adobe/aem-boilerplate/main/';
+export const defaultStatusUrl = `https://admin.${process.env.HLX_PROD_SERVER_HOST_PAGE}/status/adobe/aem-boilerplate/main/`;
 
 /**
  * Status editUrl API
  */
-export const defaultStatusEditUrl = 'glob:https://admin.gov-aem.page/status/adobe/aem-boilerplate/main?editUrl=*';
+export const defaultStatusEditUrl = `glob:https://admin.${process.env.HLX_PROD_SERVER_HOST_PAGE}/status/adobe/aem-boilerplate/main?editUrl=*`;
 
 /**
  * Profile API
  */
-export const defaultProfileUrl = 'https://admin.gov-aem.page/profile/adobe/aem-boilerplate/main';
+export const defaultProfileUrl = `https://admin.${process.env.HLX_PROD_SERVER_HOST_PAGE}/profile/adobe/aem-boilerplate/main`;
 
 /**
  * Sidekick Config API
  */
-export const defaultConfigJSONUrl = 'https://admin.gov-aem.page/sidekick/adobe/aem-boilerplate/main/config.json';
+export const defaultConfigJSONUrl = `https://admin.${process.env.HLX_PROD_SERVER_HOST_PAGE}/sidekick/adobe/aem-boilerplate/main/config.json`;
 
 export const defaultLocalConfigJSONUrl = 'http://localhost:3000/tools/sidekick/config.json';
 
@@ -284,7 +284,7 @@ export class SidekickTest {
     environment = HelixMockEnvironments.PREVIEW,
     contentType = HelixMockContentType.DOC,
     location = undefined,
-    sld = 'gov-aem',
+    sld = process.env.HLX_DOMAIN_PREFIX,
   ) {
     mockHelixEnvironment(this.appStore, environment, contentType, location, sld);
     return this;
@@ -551,7 +551,7 @@ export class SidekickTest {
    * @returns {SidekickTest}
    */
   mockFetchProfilePictureSuccess() {
-    fetchMock.get('https://admin.gov-aem.page/profile/adobe/aem-boilerplate/main/user-id/picture', {
+    fetchMock.get(`https://admin.${process.env.HLX_PROD_SERVER_HOST_PAGE}/profile/adobe/aem-boilerplate/main/user-id/picture`, {
       status: 200,
       body: new Blob(),
     }, { overwriteRoutes: true });

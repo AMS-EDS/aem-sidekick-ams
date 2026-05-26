@@ -394,15 +394,15 @@ describe('Test project', () => {
   });
 
   it('isValidHost', () => {
-    expect(isValidHost('https://main--bar--foo.gov-aem.page', 'foo', 'bar')).to.be.true;
+    expect(isValidHost(`https://main--bar--foo.${process.env.HLX_PROD_SERVER_HOST_PAGE}`, 'foo', 'bar')).to.be.true;
     expect(isValidHost('https://main--bar--foo.hlx.live', 'foo', 'bar')).to.be.true;
     expect(isValidHost('https://main--bar--foo.aem.page', 'foo', 'bar')).to.be.true;
     expect(isValidHost('https://main--bar--foo.aem.live', 'foo', 'bar')).to.be.true;
     expect(isValidHost('https://main--bar--fake.hlx.live', 'foo', 'bar')).to.be.false;
     expect(isValidHost('https://main--bar--foo.hlx.random', 'foo', 'bar')).to.be.false;
     // check without owner & repo
-    expect(isValidHost('https://main--bar--foo.gov-aem.page')).to.be.true;
-    expect(isValidHost('https://main--bar--foo.gov-aem.live')).to.be.true;
+    expect(isValidHost(`https://main--bar--foo.${process.env.HLX_PROD_SERVER_HOST_PAGE}`)).to.be.true;
+    expect(isValidHost(`https://main--bar--foo.${process.env.HLX_PROD_SERVER_HOST_LIVE}`)).to.be.true;
   });
 
   it('isValidProject', () => {
@@ -414,9 +414,9 @@ describe('Test project', () => {
 
   it('getProjectMatches', async () => {
     // match preview URL
-    expect((await getProjectMatches(CONFIGS, mockTab('https://main--bar1--foo.gov-aem.page/'))).length).to.equal(1);
+    expect((await getProjectMatches(CONFIGS, mockTab(`https://main--bar1--foo.${process.env.HLX_PROD_SERVER_HOST_PAGE}/`))).length).to.equal(1);
     // match preview URL with any ref
-    expect((await getProjectMatches(CONFIGS, mockTab('https://baz--bar1--foo.gov-aem.page/'))).length).to.equal(1);
+    expect((await getProjectMatches(CONFIGS, mockTab(`https://baz--bar1--foo.${process.env.HLX_PROD_SERVER_HOST_PAGE}/`))).length).to.equal(1);
     // match custom preview URL
     expect((await getProjectMatches(CONFIGS, mockTab('https://6-preview.foo.bar/'))).length).to.equal(1);
     // match live URL
@@ -516,11 +516,11 @@ describe('Test project', () => {
     urlCacheGetStub.restore();
 
     // test incomplete sharing url
-    const sharenogiturl = await getProjectFromUrl(mockTab('https://www.gov-aem.live/tools/sidekick/'));
+    const sharenogiturl = await getProjectFromUrl(mockTab(`https://www.${process.env.HLX_PROD_SERVER_HOST_LIVE}/tools/sidekick/`));
     expect(sharenogiturl).to.eql({});
 
     // test invalid shaaring url
-    const shareinvalidgiturl = await getProjectFromUrl(mockTab('https://www.gov-aem.live/tools/sidekick/?giturl=https://www.example.com'));
+    const shareinvalidgiturl = await getProjectFromUrl(mockTab(`https://www.${process.env.HLX_PROD_SERVER_HOST_LIVE}/tools/sidekick/?giturl=https://www.example.com`));
     expect(shareinvalidgiturl).to.eql({});
 
     // @ts-ignore
@@ -555,7 +555,7 @@ describe('Test project', () => {
     });
 
     it('resolveProxyUrl: dev url', async () => {
-      const proxyUrl = 'https://main--bar--foo.gov-aem.page/';
+      const proxyUrl = `https://main--bar--foo.${process.env.HLX_PROD_SERVER_HOST_PAGE}/`;
       const tabUrl = 'http://localhost:3000/foo';
 
       // add proxyUrl meta tag
@@ -572,7 +572,7 @@ describe('Test project', () => {
     });
 
     it('resolveProxyUrl: non-dev url', async () => {
-      const tabUrl = 'https://main--bar--foo.gov-aem.page/';
+      const tabUrl = `https://main--bar--foo.${process.env.HLX_PROD_SERVER_HOST_PAGE}/`;
 
       tab = mockTab(tabUrl);
 

@@ -275,7 +275,7 @@ describe('Test Bulk Store', () => {
 
       // catch any stray job requests to admin api
       fetchMock.sticky(
-        'glob:https://admin.gov-aem.page/job/*',
+        `glob:https://admin.${process.env.HLX_PROD_SERVER_HOST_PAGE}/job/*`,
         { status: 200, body: {} },
         { overwriteRoutes: true },
       );

@@ -1250,7 +1250,7 @@ export class AppStore {
       // The target environment is 'prod' && the envUrl does not include any of the live
       // domains & the sidekick is running in transient mode.
       // const liveDomains = ['aem.live', 'hlx.live'];
-      const liveDomains = ['aem.live', 'hlx.live', 'adobems-aem.live', 'gov-aem.live'];
+      const liveDomains = ['aem.live', 'hlx.live', process.env.HLX_PROD_SERVER_HOST_LIVE];
       if (cacheBust
         && !(targetEnv === 'prod' && !liveDomains.some((domain) => url.includes(domain)) && this.siteStore.transient)) {
         return `?nocache=${Date.now()}`;
