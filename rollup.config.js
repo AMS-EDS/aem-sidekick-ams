@@ -13,6 +13,8 @@
 
 /* eslint-disable import/no-extraneous-dependencies */
 
+import fs from 'fs';
+import nodePath from 'path';
 import nodeResolve from '@rollup/plugin-node-resolve';
 import { importMetaAssets } from '@web/rollup-plugin-import-meta-assets';
 import esbuild from 'rollup-plugin-esbuild';
@@ -23,8 +25,10 @@ import sidekickManifestBuildPlugin from './build/build.js';
 
 const hlxPage = process.env.HLX_PROD_SERVER_HOST_PAGE;
 const hlxLive = process.env.HLX_PROD_SERVER_HOST_LIVE; // confirms env file was fully sourced
+// customer slug, e.g. "ent-aem" (not a dev/prod mode flag here)
+const customerId = process.env.NODE_ENV;
 
-if (!hlxPage || !hlxLive) {
+if (!hlxPage || !hlxLive || !customerId) {
   throw new Error(
     '\nDomain env vars not set.\nRun: source ../ams-eds-terraform/environments/<env-name>.env  before building.\n',
   );
@@ -110,7 +114,7 @@ function extensionPlugins(browser) {
           transform: (contents) => injectDomainVars(contents.toString()),
         },
         // Non-JS assets and directories — copy verbatim
-        { src: ['src/extension/_locales', 'src/extension/icons', 'src/extension/lib'], dest: `./dist/${browser}` },
+        { src: ['src/extension/icons', 'src/extension/lib'], dest: `./dist/${browser}` },
         { src: ['src/extension/*.json', 'src/extension/*.html'], dest: `./dist/${browser}` },
         { src: 'src/extension/views/json/json.html', dest: `./dist/${browser}/views/json` },
         { src: 'src/extension/views/login/login.html', dest: `./dist/${browser}/views/login` },
@@ -119,6 +123,23 @@ function extensionPlugins(browser) {
     }),
     sidekickManifestBuildPlugin(browser),
   ];
+}
+
+function injectCustomerLocales(browser) {
+  const localesDir = 'src/extension/_locales';
+  return {
+    name: 'inject-customer-locales',
+    generateBundle() {
+      for (const locale of fs.readdirSync(localesDir)) {
+        const contents = fs
+          .readFileSync(nodePath.join(localesDir, locale, 'messages.json'), 'utf8')
+          .replaceAll('{{CUSTOMER}}', customerId);
+        const destDir = nodePath.join('dist', browser, '_locales', locale);
+        fs.mkdirSync(destDir, { recursive: true });
+        fs.writeFileSync(nodePath.join(destDir, 'messages.json'), contents);
+      }
+    },
+  };
 }
 
 function rewriteSPTagNames() {
@@ -145,6 +166,7 @@ function extensionBuild(browser) {
     plugins: [
       ...commonPlugins(),
       ...extensionPlugins(browser),
+      injectCustomerLocales(browser),
       rewriteSPTagNames(),
     ],
   };

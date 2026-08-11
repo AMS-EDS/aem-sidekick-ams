@@ -19,8 +19,10 @@ const babel = fromRollup(rollupBabel);
 
 const hlxPage = process.env.HLX_PROD_SERVER_HOST_PAGE;
 const hlxLive = process.env.HLX_PROD_SERVER_HOST_LIVE;
+// customer slug, e.g. "ent-aem" (not a dev/prod mode flag here)
+const customerId = process.env.NODE_ENV;
 
-if (!hlxPage || !hlxLive) {
+if (!hlxPage || !hlxLive || !customerId) {
   throw new Error(
     '\nDomain env vars not set.\nRun: source ../ams-eds-terraform/environments/<env-name>.env  before testing.\n',
   );
@@ -60,7 +62,7 @@ export default {
   testRunnerHtml: (testFramework) => `
   <html>
     <body>
-      <script>window.process = { env: { NODE_ENV: "development", HLX_PROD_SERVER_HOST_PAGE: "${hlxPage}", HLX_PROD_SERVER_HOST_LIVE: "${hlxLive}", HLX_DOMAIN_PREFIX: "${domainPrefix}" } }</script>
+      <script>window.process = { env: { NODE_ENV: "${customerId}", HLX_PROD_SERVER_HOST_PAGE: "${hlxPage}", HLX_PROD_SERVER_HOST_LIVE: "${hlxLive}", HLX_DOMAIN_PREFIX: "${domainPrefix}" } }</script>
       <script type="module" src="${testFramework}"></script>
     </body>
   </html>`,

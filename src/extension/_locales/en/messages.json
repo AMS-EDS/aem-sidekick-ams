@@ -478,7 +478,7 @@
       "description": "System user"
     },
     "title": {
-      "message": "AEM Sidekick - SSA"
+      "message": "AEM Sidekick - SSA - {{CUSTOMER}}"
     },
     "today_at": {
       "message": "Today at $1"

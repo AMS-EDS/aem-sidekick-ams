@@ -675,7 +675,7 @@
     "message": "AEM システムユーザー"
   },
   "title": {
-    "message": "AEM Sidekick - SSA"
+    "message": "AEM Sidekick - SSA - {{CUSTOMER}}"
   },
   "today_at": {
     "message": "今日の $1"

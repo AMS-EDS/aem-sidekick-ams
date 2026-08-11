@@ -43,7 +43,7 @@ import {
   defaultGdriveProfileResponse,
   defaultStatusLoggedInNotAuthorizedResponse,
 } from './fixtures/helix-admin.js';
-import enMessages from '../src/extension/_locales/en/messages.json' with { type: 'json' };
+import rawEnMessages from '../src/extension/_locales/en/messages.json' with { type: 'json' };
 import {
   DEFAULT_SHAREPOINT_BULK_SELECTION,
   DEFAULT_GDRIVE_BULK_SELECTION,
@@ -53,6 +53,12 @@ import {
   mockSharePointRoot,
 } from './fixtures/content-sources.js';
 import { defaultOnboardingResponse, onboardingHtml } from './fixtures/onboarding.js';
+
+// mirrors rollup.config.js's injectCustomerLocales build plugin
+const customerId = /** @type {string} */ (process.env.NODE_ENV);
+const enMessages = JSON.parse(
+  JSON.stringify(rawEnMessages).replace(/\{\{CUSTOMER\}\}/g, customerId),
+);
 
 /**
  * Status API
