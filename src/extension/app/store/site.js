@@ -264,7 +264,6 @@ export class SiteStore {
       specialViews,
       wordSaveDelay,
       transient = false,
-      scriptUrl = `https://www.${process.env.HLX_PROD_SERVER_HOST_LIVE}/tools/sidekick/index.js`,
     } = config;
     const publicHost = host && host.startsWith('http') ? new URL(host).host : host;
     const hostPrefix = owner && repo ? `${ref}--${repo}--${owner}` : null;
@@ -302,7 +301,6 @@ export class SiteStore {
 
     this.previewHost = previewHost;
     this.liveHost = liveHost;
-    this.scriptUrl = scriptUrl;
 
     this.innerHost = previewHost || stdInnerHost;
     this.outerHost = liveHost || legacyLiveHost || stdOuterHost;
