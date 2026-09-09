@@ -201,7 +201,10 @@ export class BulkStore {
    * @returns {BulkSelection} The selection
    */
   #getGoogleDriveBulkSelection(document) {
-    return [...document.querySelectorAll('#drive_main_page [aria-selected="true"]')]
+    return [
+      ...document.querySelectorAll('div[role="main"] [aria-selected="true"]'),
+      ...document.querySelectorAll('#drive_main_page [aria-selected="true"]'), // legacy
+    ]
       // extract file name and type
       .map((row) => {
         const file = (row.querySelector(':scope td div[data-id] > span > strong') // list layout
@@ -550,7 +553,7 @@ export class BulkStore {
         const res = await this.#doBulkOperation('preview');
         if (res) {
           ({ resources } = res.data || {});
-        } else {
+        } else if (!this.appStore.toast) {
           this.appStore.setState();
         }
       }
@@ -604,7 +607,7 @@ export class BulkStore {
         const res = await this.#doBulkOperation('publish', { route: 'live' });
         if (res) {
           ({ resources } = res.data || {});
-        } else {
+        } else if (!this.appStore.toast) {
           this.appStore.setState();
         }
       }

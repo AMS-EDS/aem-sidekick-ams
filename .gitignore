@@ -10,5 +10,7 @@ test-results.xml
 **/xcshareddata/*
 dist/
 .vscode
+.cursor
+.claude
 *.env
 tmp

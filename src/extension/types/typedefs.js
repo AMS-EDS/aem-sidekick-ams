@@ -38,6 +38,8 @@
 /**
  * @typedef {Object} OptionsConfig
  * @prop {string} id The id of the config
+ * @prop {string} [owner] The GitHub owner or organization
+ * @prop {string} [repo] The GitHub repo
  * @prop {string} [project] The name of the project
  * @prop {string} [giturl] The url to the repository
  * @prop {string[]} [mountpoints] The content source URL
@@ -48,6 +50,7 @@
  * @prop {string} [editUrlLabel] The custom label of the edit content source
  * @prop {string} [editUrlPattern] The pattern of the edit content source
  * @prop {string} [adminVersion] The specific version of admin service to use
+ * @prop {boolean} [apiUpgrade] Is an API upgrade available for this site?
  * @prop {number} [wordSaveDelay] The delay to wait for Word to save the document before previewing
  * @prop {boolean} [disabled] Is the project disabled?
  * @description Represents the sidekick configuration from the user via the options view
@@ -185,6 +188,7 @@
  * @prop {Function} [secondaryCallback] The function to call on secondary action
  * @prop {string} [cancelLabel] The cancel button label
  * @prop {string} [action] The action type (delete or unpublish)
+ * @prop {string} [confirmText] Text the user must type to confirm (e.g. path for delete/unpublish)
  */
 
 /**

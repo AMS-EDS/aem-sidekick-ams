@@ -51,6 +51,36 @@ describe('Test url-cache', () => {
         mountpoints: ['https://some.custom.host/sites/bar'],
       }],
     )).to.be.true;
+    // excluded host: .da.live
+    expect(isSharePointHost(
+      'https://content.da.live/foo/bar',
+      [{ mountpoints: ['https://content.da.live/foo/bar'] }],
+    )).to.be.false;
+    // excluded host: .google.com
+    expect(isSharePointHost(
+      'https://drive.google.com/drive/folders/1234567890',
+      [{ mountpoints: ['https://drive.google.com/drive/folders/1234567890'] }],
+    )).to.be.false;
+    // excluded host: .adobeaemcloud.com
+    expect(isSharePointHost(
+      'https://author-p00000-e00000.adobeaemcloud.com/content/site',
+      [{ mountpoints: ['https://author-p00000-e00000.adobeaemcloud.com/content/site'] }],
+    )).to.be.false;
+    // excluded host: .adobecqms.net
+    expect(isSharePointHost(
+      'https://author-stage.adobecqms.net/content/site',
+      [{ mountpoints: ['https://author-stage.adobecqms.net/content/site'] }],
+    )).to.be.false;
+    // excluded host: .adobeio-static.net
+    expect(isSharePointHost(
+      'https://test.adobeio-static.net/assets/content/site',
+      [{ mountpoints: ['https://test.adobeio-static.net/assets/content/site'] }],
+    )).to.be.false;
+    // excluded host: .adobeioruntime.net
+    expect(isSharePointHost(
+      'https://test.adobeioruntime.net/content/site',
+      [{ mountpoints: ['https://test.adobeioruntime.net/content/site'] }],
+    )).to.be.false;
   });
 
   describe('set', () => {
@@ -66,7 +96,6 @@ describe('Test url-cache', () => {
         expect(listener).to.be.a('function');
         onMessageListener = listener;
       });
-      // @ts-ignore
       sendMessage = sandbox.stub(window.chrome.runtime, 'sendMessage').callsFake((message) => {
         expect(onMessageListener).to.be.a('function');
         expect(message).to.be.an('object');
@@ -232,13 +261,6 @@ describe('Test url-cache', () => {
     it('static url', async () => {
       const results = await urlCache.get(mockTab('https://random.foo.bar/'));
       expect(results.length).to.equal(1);
-      expect(sessionGet.callCount).to.equal(1);
-    });
-
-    it('handles invalid url in cache key generation', async () => {
-      // Test with an invalid URL that would cause URL parsing to fail
-      const results = await urlCache.get(mockTab('not-a-valid-url'));
-      expect(results.length).to.equal(0);
       expect(sessionGet.callCount).to.equal(1);
     });
   });

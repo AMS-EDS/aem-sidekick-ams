@@ -28,6 +28,66 @@ import { error } from './test-utils.js';
 // @ts-ignore
 window.chrome = chromeMock;
 
+function createExpectedAuthToolsRules(authToken, owner = 'test', repo = 'site') {
+  return [{
+    id: sinon.match.number,
+    priority: 1,
+    action: {
+      type: 'modifyHeaders',
+      requestHeaders: [
+        {
+          operation: 'set',
+          header: 'x-auth-token',
+          value: authToken,
+        },
+      ],
+    },
+    condition: {
+      initiatorDomains: ['tools.aem.live'],
+      regexFilter: `/((config|api)/)?${owner}/${repo}/[^/?#]+(?:/.*)?(?:\\?.*)?$`,
+      requestDomains: ['helix-json2html.adobeaem.workers.dev'],
+      requestMethods: [
+        'get',
+        'put',
+        'post',
+        'delete',
+      ],
+      resourceTypes: [
+        'xmlhttprequest',
+      ],
+    },
+  }];
+}
+
+function createExpectedSiteToolsRules(siteToken, owner = 'test', repo = 'site') {
+  return [{
+    id: sinon.match.number,
+    priority: 1,
+    action: {
+      type: 'modifyHeaders',
+      requestHeaders: [
+        {
+          operation: 'set',
+          header: 'authorization',
+          value: `token ${siteToken}`,
+        },
+      ],
+    },
+    condition: {
+      initiatorDomains: ['tools.aem.live'],
+      regexFilter: `\\?url=https%3A%2F%2F(?:[a-z0-9-]+--)?${repo}--${owner}\\.aem\\.(page|live|reviews)%2F`,
+      requestDomains: ['da-etc.adobeaem.workers.dev'],
+      requestMethods: [
+        'get',
+        'head',
+      ],
+      resourceTypes: [
+        'xmlhttprequest',
+      ],
+    },
+  }];
+}
+
 describe('Test auth', () => {
   const sandbox = sinon.createSandbox();
 
@@ -86,6 +146,7 @@ describe('Test auth', () => {
     expect(setConfig.notCalled).to.be.true;
 
     expect(updateSessionRules.calledWith({
+      removeRuleIds: sinon.match.array,
       addRules: [
         {
           id: sinon.match.number,
@@ -105,6 +166,36 @@ describe('Test auth', () => {
             regexFilter: `^https://admin.${process.env.HLX_PROD_SERVER_HOST_PAGE}/(config/test\\.json|[a-z]+/test/.*)`,
             requestDomains: [
               `admin.${process.env.HLX_PROD_SERVER_HOST_PAGE}`,
+            ],
+            requestMethods: [
+              'get',
+              'put',
+              'post',
+              'delete',
+            ],
+            resourceTypes: [
+              'xmlhttprequest',
+            ],
+          },
+        },
+        {
+          id: sinon.match.number,
+          priority: 1,
+          action: {
+            type: 'modifyHeaders',
+            requestHeaders: [
+              {
+                operation: 'set',
+                header: 'x-auth-token',
+                value: '1234567890',
+              },
+            ],
+          },
+          condition: {
+            excludedInitiatorDomains: ['da.live'],
+            regexFilter: `^https://api.${process.env.HLX_PROD_SERVER_HOST_LIVE}/(test/.*|profile\\?org\\=test\\&)`,
+            requestDomains: [
+              `api.${process.env.HLX_PROD_SERVER_HOST_LIVE}`,
             ],
             requestMethods: [
               'get',
@@ -144,6 +235,7 @@ describe('Test auth', () => {
             ],
           },
         },
+        ...createExpectedAuthToolsRules('1234567890'),
       ],
     },
     )).to.be.true;
@@ -170,6 +262,7 @@ describe('Test auth', () => {
     expect(getConfig.callCount).to.equal(2);
 
     expect(updateSessionRules.calledWith({
+      removeRuleIds: sinon.match.array,
       addRules: [
         {
           id: sinon.match.number,
@@ -189,6 +282,36 @@ describe('Test auth', () => {
             regexFilter: `^https://admin.${process.env.HLX_PROD_SERVER_HOST_PAGE}/(config/test\\.json|[a-z]+/test/.*)`,
             requestDomains: [
               `admin.${process.env.HLX_PROD_SERVER_HOST_PAGE}`,
+            ],
+            requestMethods: [
+              'get',
+              'put',
+              'post',
+              'delete',
+            ],
+            resourceTypes: [
+              'xmlhttprequest',
+            ],
+          },
+        },
+        {
+          id: sinon.match.number,
+          priority: 1,
+          action: {
+            type: 'modifyHeaders',
+            requestHeaders: [
+              {
+                operation: 'set',
+                header: 'x-auth-token',
+                value: '1234567890',
+              },
+            ],
+          },
+          condition: {
+            excludedInitiatorDomains: ['da.live'],
+            regexFilter: `^https://api.${process.env.HLX_PROD_SERVER_HOST_LIVE}/(test/.*|profile\\?org\\=test\\&)`,
+            requestDomains: [
+              `api.${process.env.HLX_PROD_SERVER_HOST_LIVE}`,
             ],
             requestMethods: [
               'get',
@@ -309,6 +432,7 @@ describe('Test auth', () => {
             ],
           },
         },
+        ...createExpectedAuthToolsRules(authToken),
       ],
     },
     )).to.be.true;
@@ -329,6 +453,7 @@ describe('Test auth', () => {
     expect(getConfig.callCount).to.equal(2);
 
     expect(updateSessionRules.calledWith({
+      removeRuleIds: sinon.match.array,
       addRules: [
         {
           id: sinon.match.number,
@@ -348,6 +473,36 @@ describe('Test auth', () => {
             regexFilter: `^https://admin.${process.env.HLX_PROD_SERVER_HOST_PAGE}/(config/test\\.json|[a-z]+/test/.*)`,
             requestDomains: [
               `admin.${process.env.HLX_PROD_SERVER_HOST_PAGE}`,
+            ],
+            requestMethods: [
+              'get',
+              'put',
+              'post',
+              'delete',
+            ],
+            resourceTypes: [
+              'xmlhttprequest',
+            ],
+          },
+        },
+        {
+          id: sinon.match.number,
+          priority: 1,
+          action: {
+            type: 'modifyHeaders',
+            requestHeaders: [
+              {
+                operation: 'set',
+                header: 'x-auth-token',
+                value: authToken,
+              },
+            ],
+          },
+          condition: {
+            excludedInitiatorDomains: ['da.live'],
+            regexFilter: `^https://api.${process.env.HLX_PROD_SERVER_HOST_LIVE}/(test/.*|profile\\?org\\=test\\&)`,
+            requestDomains: [
+              `api.${process.env.HLX_PROD_SERVER_HOST_LIVE}`,
             ],
             requestMethods: [
               'get',
@@ -387,61 +542,34 @@ describe('Test auth', () => {
             ],
           },
         },
+        ...createExpectedAuthToolsRules(authToken),
         {
           id: sinon.match.number,
           priority: 1,
           action: {
             type: 'modifyHeaders',
-            requestHeaders: [
-              {
-                operation: 'set',
-                header: 'authorization',
-                value: `token ${siteToken}`,
-              },
-            ],
+            requestHeaders: [{ operation: 'set', header: 'authorization', value: `token ${siteToken}` }],
           },
           condition: {
-            regexFilter: sinon.match((value) => {
-              const regex = new RegExp(value);
-              // Should match aem.page, aem.live, and aem.reviews URLs
-              const shouldMatch = [
-                // AMS URLs - gov-aem.page, gov-aem.live, gov-aem.reviews
-                `https://main--site--test.${process.env.HLX_PROD_SERVER_HOST_PAGE}/`,
-                `https://main--site--test.${process.env.HLX_PROD_SERVER_HOST_PAGE}/index`,
-                `https://preview--site--test.${process.env.HLX_PROD_SERVER_HOST_LIVE}/document`,
-                `https://feature-branch--site--test.${process.env.HLX_DOMAIN_PREFIX}.reviews/test`,
-                // Should match localhost:3000
-                'http://localhost:3000/',
-                'http://localhost:3000/index',
-              ];
-              const shouldNotMatch = [
-                'https://example.com/',
-                'http://localhost/', // no port
-                'http://localhost:8080/', // different port
-                'https://localhost:3000/', // https instead of http
-                'http://127.0.0.1:3000/', // IP instead of localhost
-                'http://localhost:3000', // no trailing slash
-              ];
-              return shouldMatch.every((url) => regex.test(url))
-                && shouldNotMatch.every((url) => !regex.test(url));
-            }),
-            requestMethods: [
-              'get',
-              'post',
-            ],
-            resourceTypes: [
-              'main_frame',
-              'sub_frame',
-              'script',
-              'stylesheet',
-              'image',
-              'xmlhttprequest',
-              'media',
-              'font',
-              'other',
-            ],
+            regexFilter: `^https://[a-z0-9-]+--site--test\\.${process.env.HLX_DOMAIN_PREFIX}\\.(page|live|reviews)/`,
+            requestMethods: ['get', 'post', 'head'],
+            resourceTypes: ['main_frame', 'sub_frame', 'script', 'stylesheet', 'image', 'xmlhttprequest', 'media', 'font', 'other'],
           },
         },
+        {
+          id: sinon.match.number,
+          priority: 1,
+          action: {
+            type: 'modifyHeaders',
+            requestHeaders: [{ operation: 'set', header: 'authorization', value: `token ${siteToken}` }],
+          },
+          condition: {
+            regexFilter: '^http://localhost:3000/',
+            requestMethods: ['get', 'post', 'head'],
+            resourceTypes: ['main_frame', 'sub_frame', 'script', 'stylesheet', 'image', 'xmlhttprequest', 'media', 'font', 'other'],
+          },
+        },
+        ...createExpectedSiteToolsRules(siteToken),
       ],
     },
     )).to.be.true;
@@ -451,13 +579,13 @@ describe('Test auth', () => {
     await setAuthToken(owner, repo, authToken, expiry, siteToken, expiry);
     expect(setConfig.callCount).to.equal(2);
     expect(getConfig.callCount).to.equal(4);
-    expect(updateSessionRules.callCount).to.equal(4);
+    expect(updateSessionRules.callCount).to.equal(2);
 
     // remove existing auth and site tokens
     await setAuthToken(owner, repo, '', undefined, '', undefined);
     expect(setConfig.callCount).to.equal(3);
     expect(getConfig.callCount).to.equal(6);
-    expect(updateSessionRules.callCount).to.equal(5);
+    expect(updateSessionRules.callCount).to.equal(3);
   });
 
   it('updateUserAgent', async () => {
@@ -477,12 +605,65 @@ describe('Test auth', () => {
           }],
         },
         condition: {
-          regexFilter: `^https://admin.${process.env.HLX_PROD_SERVER_HOST_PAGE}/.*`,
-          requestDomains: [`admin.${process.env.HLX_PROD_SERVER_HOST_PAGE}`],
+          requestDomains: [`admin.${process.env.HLX_PROD_SERVER_HOST_PAGE}`, `api.${process.env.HLX_PROD_SERVER_HOST_LIVE}`],
           requestMethods: ['get', 'put', 'post', 'delete'],
           resourceTypes: ['xmlhttprequest'],
         },
       }],
     })).to.be.true;
+  });
+
+  it('keeps the site auth rule active during reconfiguration (no gap)', async () => {
+    // DNR session rules persist across service-worker restarts, so on a cold
+    // start the site-token rule is already live. Reconfiguration must swap it
+    // atomically — if the rule is ever absent, an in-flight JS/CSS request 401s.
+    const owner = 'test';
+    const repo = 'site';
+    const siteToken = '0987654321';
+    const siteAsset = `https://main--site--test.${process.env.HLX_DOMAIN_PREFIX}.page/scripts/scripts.js`;
+
+    // Stateful stand-in for the browser's session ruleset.
+    let sessionRules = [];
+    const siteTokenFor = (url) => sessionRules
+      .filter((r) => r.condition?.regexFilter
+        && new RegExp(r.condition.regexFilter).test(url)
+        && (r.condition.resourceTypes ?? []).includes('script'))
+      .flatMap((r) => r.action?.requestHeaders ?? [])
+      .find((h) => h.header === 'authorization')?.value;
+
+    sandbox.stub(chrome.declarativeNetRequest, 'getSessionRules')
+      .callsFake(async () => sessionRules);
+
+    const observedDuringReconfigure = [];
+    let recording = false;
+    sandbox.stub(chrome.declarativeNetRequest, 'updateSessionRules')
+      .callsFake(async ({ removeRuleIds = [], addRules = [] }) => {
+        sessionRules = sessionRules
+          .filter((r) => !removeRuleIds.includes(r.id))
+          .concat(addRules);
+        if (recording) {
+          // what an in-flight request would see right after this mutation lands
+          observedDuringReconfigure.push(siteTokenFor(siteAsset));
+        }
+      });
+
+    chrome.storage.session.set({
+      projects: [{
+        id: `${owner}/${repo}`, owner, repo, siteToken, siteTokenExpiry: Date.now() + 60000,
+      }],
+    });
+
+    // login: rule goes live
+    await configureAuthAndCorsHeaders();
+    expect(siteTokenFor(siteAsset)).to.equal(`token ${siteToken}`);
+
+    // service-worker cold start re-runs configuration while the rule is live
+    recording = true;
+    await configureAuthAndCorsHeaders();
+
+    expect(observedDuringReconfigure).to.not.include(undefined);
+    expect(siteTokenFor(siteAsset)).to.equal(`token ${siteToken}`);
+
+    chrome.storage.session.set({ projects: [] });
   });
 });

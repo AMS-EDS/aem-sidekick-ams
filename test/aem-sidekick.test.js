@@ -22,6 +22,8 @@ import { defaultSidekickConfig } from './fixtures/sidekick-config.js';
 import '../src/extension/index.js';
 import { HelixMockEnvironments, restoreEnvironment } from './mocks/environment.js';
 import { SidekickTest } from './sidekick-test.js';
+import { EVENTS } from '../src/extension/app/constants.js';
+import { EventBus } from '../src/extension/app/utils/event-bus.js';
 /**
  * The AEMSidekick object type
  * @typedef {import('../src/extension/app/aem-sidekick.js').AEMSidekick} AEMSidekick
@@ -73,6 +75,31 @@ describe('AEM Sidekick - SSA', () => {
       source: 'sidekick',
     })).to.be.true;
   });
+
+  it('cmd/ctrl+r busts cache and reloads page when sidekick open', async () => {
+    sidekick = sidekickTest.createSidekick();
+    await sidekickTest.awaitEnvSwitcher();
+
+    const sendMessageStub = sidekickTest.sandbox.stub(window.chrome.runtime, 'sendMessage').resolves();
+    const reloadPageStub = sidekickTest.sandbox.stub(sidekickTest.appStore, 'reloadPage');
+
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'x', bubbles: true }));
+    expect(sendMessageStub.called).to.be.false;
+    expect(reloadPageStub.called).to.be.false;
+
+    sidekick.open = true;
+    await sidekick.updateComplete;
+    expect(sidekick.open).to.be.true;
+
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'x', bubbles: true }));
+    expect(sendMessageStub.called).to.be.false;
+    expect(reloadPageStub.called).to.be.false;
+
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'r', metaKey: true, bubbles: true }));
+    await waitUntil(() => reloadPageStub.calledOnce, 'reloadPage was not called', { timeout: 2000 });
+    // @ts-ignore
+    expect(sendMessageStub.calledWith({ action: 'bustCache' })).to.be.true;
+  }).timeout(5000);
 
   it('dispatches sidekick-ready', async () => {
     const readySpy = spy();
@@ -182,6 +209,25 @@ describe('AEM Sidekick - SSA', () => {
     expect(sendResponse).to.have.been.calledOnce;
   });
 
+  it('responds to ping message', async () => {
+    const sendResponse = spy();
+
+    const message = { action: 'ping' };
+    const sender = {};
+
+    sidekickTest.sandbox.stub(chrome.runtime.onMessage, 'addListener')
+      .callsFake((func) => func(
+        message,
+        sender,
+        sendResponse,
+      ));
+
+    sidekick = sidekickTest.createSidekick();
+    await sidekickTest.awaitEnvSwitcher();
+
+    expect(sendResponse).to.have.been.calledOnceWith(true);
+  });
+
   it('ignores external notifications from invalid extension', async () => {
     const sendResponse = spy();
 
@@ -240,8 +286,6 @@ describe('AEM Sidekick - SSA', () => {
   });
 
   it('handles resizePalette message', async () => {
-    const { EventBus } = await import('../src/extension/app/utils/event-bus.js');
-    const { EVENTS } = await import('../src/extension/app/constants.js');
     const sendResponse = spy();
 
     const message = {
@@ -280,8 +324,6 @@ describe('AEM Sidekick - SSA', () => {
   });
 
   it('handles resizePalette message when container does not exist', async () => {
-    const { EventBus } = await import('../src/extension/app/utils/event-bus.js');
-    const { EVENTS } = await import('../src/extension/app/constants.js');
     const sendResponse = spy();
 
     const message = {
@@ -320,8 +362,6 @@ describe('AEM Sidekick - SSA', () => {
   });
 
   it('handles resizePopover message', async () => {
-    const { EventBus } = await import('../src/extension/app/utils/event-bus.js');
-    const { EVENTS } = await import('../src/extension/app/constants.js');
     const sendResponse = spy();
 
     const message = {
@@ -405,5 +445,36 @@ describe('AEM Sidekick - SSA', () => {
 
     // Verify sendResponse was called with true
     expect(sendResponse.calledWith(true)).to.be.true;
+  });
+
+  describe('document pointerdown handler', () => {
+    it('dispatches CLOSE_POPOVER when clicking outside the sidekick', async () => {
+      sidekick = sidekickTest.createSidekick();
+      await sidekickTest.awaitEnvSwitcher();
+
+      const dispatchEventSpy = sidekickTest.sandbox.spy(EventBus.instance, 'dispatchEvent');
+
+      // Simulate a pointerdown outside the sidekick
+      document.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+
+      const closePopoverEvent = dispatchEventSpy.getCalls()
+        .find((call) => call.args[0].type === EVENTS.CLOSE_POPOVER);
+      expect(closePopoverEvent).to.exist;
+    });
+
+    it('does not dispatch CLOSE_POPOVER when clicking inside the sidekick', async () => {
+      sidekick = sidekickTest.createSidekick();
+      await sidekickTest.awaitEnvSwitcher();
+
+      const dispatchEventSpy = sidekickTest.sandbox.spy(EventBus.instance, 'dispatchEvent');
+
+      // Simulate a pointerdown inside the sidekick
+      const actionBar = recursiveQuery(sidekick, 'plugin-action-bar');
+      actionBar.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, composed: true }));
+
+      const closePopoverEvent = dispatchEventSpy.getCalls()
+        .find((call) => call.args[0].type === EVENTS.CLOSE_POPOVER);
+      expect(closePopoverEvent).to.not.exist;
+    });
   });
 });

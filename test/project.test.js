@@ -31,8 +31,6 @@ import {
   getGitHubSettings,
   getProjectFromUrl,
   resolveProxyUrl,
-  detectLegacySidekick,
-  importLegacyProjects,
 } from '../src/extension/project.js';
 import { urlCache } from '../src/extension/url-cache.js';
 import { error, mockTab } from './test-utils.js';
@@ -132,7 +130,6 @@ describe('Test project', () => {
       let value;
       switch (prop) {
         case 'projects':
-        case 'hlxSidekickProjects': // legacy
           value = ['foo/bar1'];
           break;
         case 'foo/bar1':
@@ -155,22 +152,9 @@ describe('Test project', () => {
     sandbox.restore();
     sandbox.stub(chrome.storage.sync, 'get')
       .withArgs('projects')
-      .resolves({})
-      .withArgs('hlxSidekickProjects')
       .resolves({});
     projects = await getProjects();
     expect(projects.length).to.equal(0);
-    // legacy projects
-    sandbox.restore();
-    sandbox.stub(chrome.storage.sync, 'get')
-      .withArgs('projects')
-      .resolves({})
-      .withArgs('hlxSidekickProjects')
-      .resolves({
-        hlxSidekickProjects: ['foo/bar1'],
-      });
-    projects = await getProjects();
-    expect(projects.length).to.equal(1);
   });
 
   it('getProjectEnv', async () => {
@@ -216,6 +200,21 @@ describe('Test project', () => {
     // @ts-ignore
     const failure = await getProjectEnv({});
     expect(failure).to.eql({});
+  });
+
+  it('getProjectEnv with apiUpgrade', async () => {
+    const fetchStub = sandbox.stub(window, 'fetch')
+      .resolves(new Response(JSON.stringify(CONFIG_JSON)));
+    const {
+      host, project,
+    } = await getProjectEnv({
+      owner: 'adobe',
+      repo: 'business-website',
+      apiUpgrade: true,
+    });
+    expect(new URL(fetchStub.args[0][0]).origin).to.equal(`https://api.${process.env.HLX_PROD_SERVER_HOST_LIVE}`);
+    expect(host).to.equal('business.adobe.com');
+    expect(project).to.equal('Adobe Business Website');
   });
 
   it('assembleProject with giturl', async () => {
@@ -398,8 +397,9 @@ describe('Test project', () => {
     expect(isValidHost('https://main--bar--foo.hlx.live', 'foo', 'bar')).to.be.true;
     expect(isValidHost('https://main--bar--foo.aem.page', 'foo', 'bar')).to.be.true;
     expect(isValidHost('https://main--bar--foo.aem.live', 'foo', 'bar')).to.be.true;
-    expect(isValidHost('https://main--bar--fake.hlx.live', 'foo', 'bar')).to.be.false;
-    expect(isValidHost('https://main--bar--foo.hlx.random', 'foo', 'bar')).to.be.false;
+    expect(isValidHost('https://main--bar--fake.aem.live', 'foo', 'bar')).to.be.false;
+    expect(isValidHost('https://main--bar--foo.aem.random', 'foo', 'bar')).to.be.false;
+    expect(isValidHost('https://main--bar--foo.hlx.page', 'foo', 'bar')).to.be.true;
     // check without owner & repo
     expect(isValidHost(`https://main--bar--foo.${process.env.HLX_PROD_SERVER_HOST_PAGE}`)).to.be.true;
     expect(isValidHost(`https://main--bar--foo.${process.env.HLX_PROD_SERVER_HOST_LIVE}`)).to.be.true;
@@ -410,6 +410,7 @@ describe('Test project', () => {
     expect(isValidProject({ owner: 'foo', repo: 'bar' })).to.be.false;
     expect(isValidProject({ owner: 'foo' })).to.be.false;
     expect(isValidProject()).to.be.false;
+    expect(isValidProject(null)).to.be.false;
   });
 
   it('getProjectMatches', async () => {
@@ -420,23 +421,23 @@ describe('Test project', () => {
     // match custom preview URL
     expect((await getProjectMatches(CONFIGS, mockTab('https://6-preview.foo.bar/'))).length).to.equal(1);
     // match live URL
-    expect((await getProjectMatches(CONFIGS, mockTab('https://main--bar1--foo.hlx.live/'))).length).to.equal(1);
+    expect((await getProjectMatches(CONFIGS, mockTab('https://main--bar1--foo.aem.live/'))).length).to.equal(1);
     // match custom live URL
     expect((await getProjectMatches(CONFIGS, mockTab('https://6-live.foo.bar/'))).length).to.equal(1);
     // match production host
     expect((await getProjectMatches(CONFIGS, mockTab('https://1.foo.bar/'))).length).to.equal(1);
-    // ignore disabled config
-    expect((await getProjectMatches(CONFIGS, mockTab('https://main--bar2--foo.hlx.live/'))).length).to.equal(0);
+    // match disabled config
+    expect((await getProjectMatches(CONFIGS, mockTab('https://main--bar2--foo.aem.live/'))).length).to.equal(1);
     // match transient URL
-    expect((await getProjectMatches(CONFIGS, mockTab('https://main--bar0--foo.hlx.live/'))).length).to.equal(1);
+    expect((await getProjectMatches(CONFIGS, mockTab('https://main--bar0--foo.aem.live/'))).length).to.equal(1);
     // testing else paths
-    expect((await getProjectMatches(CONFIGS, mockTab('https://bar--foo.hlx.live/'))).length).to.equal(0);
+    expect((await getProjectMatches(CONFIGS, mockTab('https://bar--foo.aem.live/'))).length).to.equal(0);
     await urlCache.set(mockTab('https://7.foo.bar/'), { owner: 'foo', repo: 'bar6' });
     expect((await getProjectMatches(CONFIGS, mockTab('https://7.foo.bar/'))).length).to.equal(1);
-    // match sharepoint URL (docx)
+    // match sharepoint URL (docx) - discovery returns bar1 and bar2 (disabled)
     mockDiscoveryCall();
     await urlCache.set(mockTab('https://foo.sharepoint.com/:w:/r/sites/foo/_layouts/15/Doc.aspx?sourcedoc=%7BBFD9A19C-4A68-4DBF-8641-DA2F1283C895%7D&file=index.docx&action=default&mobileredirect=true'));
-    expect((await getProjectMatches(CONFIGS, mockTab('https://foo.sharepoint.com/:w:/r/sites/foo/_layouts/15/Doc.aspx?sourcedoc=%7BBFD9A19C-4A68-4DBF-8641-DA2F1283C895%7D&file=index.docx&action=default&mobileredirect=true'))).length).to.equal(1);
+    expect((await getProjectMatches(CONFIGS, mockTab('https://foo.sharepoint.com/:w:/r/sites/foo/_layouts/15/Doc.aspx?sourcedoc=%7BBFD9A19C-4A68-4DBF-8641-DA2F1283C895%7D&file=index.docx&action=default&mobileredirect=true'))).length).to.equal(2);
     // match transient sharepoint URL
     await urlCache.set(mockTab('https://foo.sharepoint.com/:w:/r/sites/foo/_layouts/15/Doc.aspx?sourcedoc=%7BBFD9A19C-4A68-4DBF-8641-DA2F1283C895%7D&file=test.docx&action=default&mobileredirect=true'));
     expect((await getProjectMatches([], mockTab('https://foo.sharepoint.com/:w:/r/sites/foo/_layouts/15/Doc.aspx?sourcedoc=%7BBFD9A19C-4A68-4DBF-8641-DA2F1283C895%7D&file=test.docx&action=default&mobileredirect=true'))).length).to.equal(1);
@@ -503,7 +504,6 @@ describe('Test project', () => {
       {
         org: 'foo',
         site: 'bar',
-        // @ts-ignore
         originalSite: true,
       },
     ]);
@@ -523,7 +523,6 @@ describe('Test project', () => {
     const shareinvalidgiturl = await getProjectFromUrl(mockTab(`https://www.${process.env.HLX_PROD_SERVER_HOST_LIVE}/tools/sidekick/?giturl=https://www.example.com`));
     expect(shareinvalidgiturl).to.eql({});
 
-    // @ts-ignore
     const none = await getProjectFromUrl();
     expect(none).to.eql({});
   });
@@ -602,118 +601,6 @@ describe('Test project', () => {
 
       const res = await resolveProxyUrl(tab, []);
       expect(res.url).to.equal(tabUrl);
-    });
-  });
-
-  describe('legacy project migration', () => {
-    const legacySidekickId = 'klmnopqrstuvwxyz';
-
-    function mockLegacySidekickResponse(extensionId, lastError, projects) {
-      const stub = sandbox.stub(chrome.runtime, 'sendMessage');
-      stub.callsFake(async (msgId, { action }, callback) => {
-        if (lastError) {
-          // @ts-ignore
-          chrome.runtime.lastError = lastError;
-        }
-        switch (action) {
-          case 'ping':
-            callback(msgId === extensionId);
-            break;
-          case 'getProjects':
-            callback(msgId === extensionId ? projects : null);
-            break;
-          default:
-            callback();
-        }
-      });
-      return stub;
-    }
-
-    beforeEach(() => {
-      sandbox.stub(chrome.runtime, 'getManifest').returns({
-        ...chrome.runtime.getManifest(),
-        externally_connectable: {
-          ids: [
-            'some_extension_id',
-            legacySidekickId,
-            'other_extension_id',
-          ],
-        },
-      });
-    });
-
-    describe('detectLegacySidekick', () => {
-      it('detects legacy sidekick and returns id', async () => {
-        mockLegacySidekickResponse(legacySidekickId);
-        const id = await detectLegacySidekick();
-        expect(id).to.equal(legacySidekickId);
-      });
-
-      it('no legacy sidekick present', async () => {
-        mockLegacySidekickResponse(); // no id matches
-        const id = await detectLegacySidekick();
-        expect(id).to.be.undefined;
-      });
-
-      it('chrome.runtime.lastError exists', async () => {
-        mockLegacySidekickResponse(legacySidekickId, error);
-        const id = await detectLegacySidekick();
-        expect(id).to.be.undefined;
-      });
-
-      it('chrome.runtime.sendMessage throws', async () => {
-        sandbox.stub(chrome.runtime, 'sendMessage').throws(error);
-        const id = await detectLegacySidekick();
-        expect(id).to.be.undefined;
-      });
-    });
-
-    describe('importLegacyProjects', () => {
-      it('no legacy sidekick present', async () => {
-        mockLegacySidekickResponse(); // no id matches
-        const imported = await importLegacyProjects();
-        expect(imported).to.equal(0);
-      });
-
-      it('legacy sidekick responds with null', async () => {
-        mockLegacySidekickResponse(legacySidekickId, null, null);
-        const imported = await importLegacyProjects(legacySidekickId);
-        expect(imported).to.equal(0);
-      });
-
-      it('legacy sidekick responds with empty array', async () => {
-        mockLegacySidekickResponse(legacySidekickId, null, []);
-        const imported = await importLegacyProjects(legacySidekickId);
-        expect(imported).to.equal(0);
-      });
-
-      it('legacy sidekick responds with new projects', async () => {
-        mockLegacySidekickResponse(legacySidekickId, null, CONFIGS);
-        const imported = await importLegacyProjects(legacySidekickId);
-        expect(imported).to.equal(6);
-      });
-
-      it('legacy sidekick responds with existing project', async () => {
-        mockLegacySidekickResponse(legacySidekickId, null, [CONFIGS[0]]);
-        sandbox.stub(chrome.storage.sync, 'get')
-          .callsFake(async (prop) => {
-            const value = prop.includes('/')
-              ? CONFIGS.find(({ owner, repo }) => prop === `${owner}/${repo}`) // project
-              : CONFIGS.slice(0, 1).map(({ owner, repo }) => `${owner}/${repo}`); // projects
-            return { [prop]: value };
-          });
-        const imported = await importLegacyProjects(legacySidekickId);
-        expect(imported).to.equal(0);
-      });
-
-      it('chrome.runtime.sendMessage throws', async () => {
-        mockLegacySidekickResponse(legacySidekickId, null, CONFIGS)
-          .withArgs(legacySidekickId)
-          .onFirstCall()
-          .throws(error);
-        const imported = await importLegacyProjects(legacySidekickId);
-        expect(imported).to.equal(0);
-      });
     });
   });
 });

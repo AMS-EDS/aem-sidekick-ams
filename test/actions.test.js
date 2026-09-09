@@ -37,21 +37,6 @@ import { urlCache } from '../src/extension/url-cache.js';
 // @ts-ignore
 window.chrome = chromeMock;
 
-const CONFIGS = [{
-  owner: 'foo',
-  repo: 'bar1',
-  ref: 'main',
-  host: '1.foo.bar',
-  mountpoints: ['https://foo.sharepoint.com/sites/foo/Shared%20Documents/root1'],
-}, {
-  owner: 'foo',
-  repo: 'bar2',
-  ref: 'main',
-  host: '2.foo.bar',
-  mountpoints: ['https://foo.sharepoint.com/sites/foo/Shared%20Documents/root2'],
-  disabled: true,
-}];
-
 describe('Test actions', () => {
   const sandbox = sinon.createSandbox();
 
@@ -157,7 +142,7 @@ describe('Test actions', () => {
     resp = await externalActions.getAuthInfo({}, { tab: mockTab('https://tools.aem.live/test') });
     expect(resp).to.deep.equal(['foo']);
 
-    resp = await externalActions.getAuthInfo({}, { tab: mockTab('https://feature--helix-labs-website--adobe.aem.page/feature') });
+    resp = await externalActions.getAuthInfo({}, { tab: mockTab('https://feature--helix-tools-website--adobe.aem.page/feature') });
     expect(resp).to.deep.equal(['foo']);
 
     // untrusted actors
@@ -219,10 +204,7 @@ describe('Test actions', () => {
     resp = await externalActions.getSites({}, { tab: mockTab('https://tools.aem.live/foo') });
     expect(resp).to.deep.equal(expectedOutput);
 
-    resp = await externalActions.getSites({}, { tab: mockTab('https://labs.aem.live/foo') });
-    expect(resp).to.deep.equal(expectedOutput);
-
-    resp = await externalActions.getSites({}, { tab: mockTab('https://feature--helix-labs-website--adobe.aem.page/feature') });
+    resp = await externalActions.getSites({}, { tab: mockTab('https://feature--helix-tools-website--adobe.aem.page/feature') });
     expect(resp).to.deep.equal(expectedOutput);
 
     // untrusted actors
@@ -546,14 +528,14 @@ describe('Test actions', () => {
     let resp;
 
     // successful close with specific ID
-    resp = await externalActions.closePalette({ id: 'my-plugin' }, { tab: mockTab('https://main--bar--foo.hlx.page/', { id: 1 }) });
+    resp = await externalActions.closePalette({ id: 'my-plugin' }, { tab: mockTab('https://main--bar--foo.aem.page/', { id: 1 }) });
     expect(sendMessageStub.calledWith(1, { action: 'close_palette', id: 'my-plugin' })).to.be.true;
     expect(resp).to.be.true;
 
     sandbox.resetHistory();
 
     // no palette ID
-    resp = await externalActions.closePalette({}, { tab: mockTab('https://main--bar--foo.hlx.page/', { id: 1 }) });
+    resp = await externalActions.closePalette({}, { tab: mockTab('https://main--bar--foo.aem.page/', { id: 1 }) });
     expect(sendMessageStub.called).to.be.false;
     expect(resp).to.be.false;
 
@@ -568,7 +550,7 @@ describe('Test actions', () => {
 
     // error sending message
     sendMessageStub.rejects(error);
-    resp = await externalActions.closePalette({ id: 'my-plugin' }, { tab: mockTab('https://main--bar--foo.hlx.page/', { id: 1 }) });
+    resp = await externalActions.closePalette({ id: 'my-plugin' }, { tab: mockTab('https://main--bar--foo.aem.page/', { id: 1 }) });
     expect(resp).to.be.false;
   });
 
@@ -578,14 +560,14 @@ describe('Test actions', () => {
     let resp;
 
     // successful close with specific ID
-    resp = await externalActions.closePopover({ id: 'my-plugin' }, { tab: mockTab('https://main--bar--foo.hlx.page/', { id: 1 }) });
+    resp = await externalActions.closePopover({ id: 'my-plugin' }, { tab: mockTab('https://main--bar--foo.aem.page/', { id: 1 }) });
     expect(sendMessageStub.calledWith(1, { action: 'close_popover', id: 'my-plugin' })).to.be.true;
     expect(resp).to.be.true;
 
     sandbox.resetHistory();
 
     // no popover ID
-    resp = await externalActions.closePopover({}, { tab: mockTab('https://main--bar--foo.hlx.page/', { id: 1 }) });
+    resp = await externalActions.closePopover({}, { tab: mockTab('https://main--bar--foo.aem.page/', { id: 1 }) });
     expect(sendMessageStub.called).to.be.false;
     expect(resp).to.be.false;
 
@@ -600,8 +582,26 @@ describe('Test actions', () => {
 
     // error sending message
     sendMessageStub.rejects(error);
-    resp = await externalActions.closePopover({ id: 'my-plugin' }, { tab: mockTab('https://main--bar--foo.hlx.page/', { id: 1 }) });
+    resp = await externalActions.closePopover({ id: 'my-plugin' }, { tab: mockTab('https://main--bar--foo.aem.page/', { id: 1 }) });
     expect(resp).to.be.false;
+  });
+
+  it('internal: bustCache', async () => {
+    const updateSessionRulesStub = sandbox.stub(chrome.declarativeNetRequest, 'updateSessionRules').resolves();
+
+    const tab = mockTab('https://example.com/page');
+    let result = await internalActions.bustCache(tab, {});
+    expect(result).to.be.true;
+    expect(updateSessionRulesStub.calledOnce).to.be.true;
+
+    updateSessionRulesStub.resetHistory();
+    result = await internalActions.bustCache(tab, { host: 'other.com' });
+    expect(result).to.be.true;
+    expect(updateSessionRulesStub.calledOnce).to.be.true;
+
+    expect(await internalActions.bustCache(null, {})).to.be.false;
+    expect(await internalActions.bustCache({ id: 1, active: true }, {})).to.be.false;
+    expect(await internalActions.bustCache(mockTab('https://a.com', { active: false }), {})).to.be.false;
   });
 
   it('internal: addRemoveProject', async () => {
@@ -635,8 +635,7 @@ describe('Test actions', () => {
     expect(set.calledWith(
       { projects: [] },
     )).to.be.true;
-    // @ts-ignore
-    expect(remove.calledWith('foo/bar')).to.be.true;
+    expect(remove.calledWith(sinon.match('foo/bar'))).to.be.true;
     expect(i18nSpy.calledWith('config_project_removed', 'foo/bar')).to.be.true;
 
     // testing transient project
@@ -647,7 +646,7 @@ describe('Test actions', () => {
     }]);
     await internalActions.addRemoveProject({
       id: 1,
-      url: 'https://main--bar--foo.hlx.page/',
+      url: 'https://main--bar--foo.aem.page/',
     });
     expect(set.calledWith({
       'foo/bar': {
@@ -662,7 +661,7 @@ describe('Test actions', () => {
     // remove again
     await internalActions.addRemoveProject({
       id: 1,
-      url: 'https://main--bar--foo.hlx.page/',
+      url: 'https://main--bar--foo.aem.page/',
     });
 
     // testing noop
@@ -672,6 +671,66 @@ describe('Test actions', () => {
       url: 'https://www.example.com/',
     });
     expect(set.notCalled).to.be.true;
+  }).timeout(5000);
+
+  it('internal: addRemoveProject uses stored project from content script', async () => {
+    const remove = sandbox.spy(chrome.storage.sync, 'remove');
+
+    // add two projects
+    await internalActions.addRemoveProject(mockTab('https://main--bar1--foo.aem.page/', { id: 1 }));
+    await internalActions.addRemoveProject(mockTab('https://main--bar2--foo.aem.page/', { id: 1 }));
+
+    // stub url cache to match both projects from a content source url
+    sandbox.stub(urlCache, 'get').resolves([
+      { org: 'foo', site: 'bar1' },
+      { org: 'foo', site: 'bar2' },
+    ]);
+
+    // stub content script to return stored project selection
+    sandbox.stub(chrome.tabs, 'sendMessage').callsFake(async (
+      _,
+      /** @type {*} */ msg,
+    ) => {
+      if (msg.action === 'getStoredProject') {
+        return { owner: 'foo', repo: 'bar2', ref: 'main' };
+      }
+      return undefined;
+    });
+
+    // remove the stored project (bar2, not bar1)
+    await internalActions.addRemoveProject(mockTab('https://foo.sharepoint.com/sites/foo/test', { id: 1 }));
+    expect(remove.calledWith(sinon.match('foo/bar2'))).to.be.true;
+    expect(remove.calledWith(sinon.match('foo/bar1'))).to.be.false;
+  }).timeout(5000);
+
+  it('internal: addRemoveProject refuses without stored project on multiple matches', async () => {
+    const set = sandbox.spy(chrome.storage.sync, 'set');
+    const remove = sandbox.spy(chrome.storage.sync, 'remove');
+    const sendMessageSpy = sandbox.spy(chrome.tabs, 'sendMessage');
+
+    // add two projects
+    await internalActions.addRemoveProject(mockTab('https://main--bar3--foo.aem.page/', { id: 1 }));
+    await internalActions.addRemoveProject(mockTab('https://main--bar4--foo.aem.page/', { id: 1 }));
+    set.resetHistory();
+    remove.resetHistory();
+
+    // stub url cache to match both projects from a content source url
+    sandbox.stub(urlCache, 'get').resolves([
+      { org: 'foo', site: 'bar3' },
+      { org: 'foo', site: 'bar4' },
+    ]);
+
+    // no stored project (sendMessage returns undefined by default)
+    await internalActions.addRemoveProject(mockTab('https://foo.sharepoint.com/sites/foo/test', { id: 1 }));
+
+    // should not add or remove any project
+    expect(set.notCalled).to.be.true;
+    expect(remove.notCalled).to.be.true;
+
+    // should show notification asking user to pick a project
+    expect(sendMessageSpy.calledWithMatch(1, {
+      action: 'show_notification',
+    })).to.be.true;
   }).timeout(5000);
 
   it('internal: enableDisableProject', async () => {
@@ -695,6 +754,10 @@ describe('Test actions', () => {
       },
     })).to.be.true;
     // enable project
+    sandbox.stub(chrome.tabs.onUpdated, 'addListener')
+      .callsFake((/** @type {*} */ cb) => cb(2, { status: 'complete' }));
+    sandbox.stub(chrome.tabs, 'sendMessage')
+      .callsFake(async (_, /** @type {*} */ msg) => (msg.action === 'ping' ? true : undefined));
     await internalActions.enableDisableProject(mockTab(`https://main--bar--foo.${process.env.HLX_PROD_SERVER_HOST_PAGE}/`, {
       id: 2,
     }));
@@ -707,20 +770,230 @@ describe('Test actions', () => {
         ref: 'main',
       },
     })).to.be.true;
-    // testing noop
+    // testing noop (no matches)
     set.resetHistory();
     await internalActions.enableDisableProject(mockTab('https://www.example.com/', {
       url: 'https://www.example.com/',
     }));
     expect(set.notCalled).to.be.true;
+    // testing noop (transient match, project not in storage)
+    await internalActions.enableDisableProject(mockTab('https://main--baz--qux.aem.page/', {
+      id: 3,
+    }));
+    expect(set.notCalled).to.be.true;
   });
 
+  it('internal: enableDisableProject retries ping on enable', async () => {
+    // set up storage directly with a disabled project
+    chrome.storage.sync.clear();
+    chrome.storage.session.clear();
+    chrome.storage.sync.set({
+      projects: ['foo/bar'],
+      'foo/bar': {
+        id: 'foo/bar',
+        giturl: 'https://github.com/foo/bar/tree/main',
+        owner: 'foo',
+        repo: 'bar',
+        ref: 'main',
+        disabled: true,
+      },
+    });
+
+    sandbox.stub(chrome.tabs.onUpdated, 'addListener')
+      .callsFake((/** @type {*} */ cb) => cb(4, { status: 'complete' }));
+
+    // first ping throws (sidekick not ready), second succeeds
+    let pingCount = 0;
+    sandbox.stub(chrome.tabs, 'sendMessage')
+      .callsFake(async (_, /** @type {*} */ msg) => {
+        if (msg.action === 'ping') {
+          pingCount += 1;
+          if (pingCount === 1) {
+            throw new Error('not ready');
+          }
+          return true;
+        }
+        return undefined;
+      });
+
+    await internalActions.enableDisableProject(mockTab('https://main--bar--foo.aem.page/', { id: 4 }));
+    expect(pingCount).to.be.greaterThan(1);
+  }).timeout(15000);
+
+  it('internal: enableDisableProject uses stored project from content script', async () => {
+    // ensure clean storage with exactly two projects
+    chrome.storage.sync.clear();
+    chrome.storage.session.clear();
+    chrome.storage.sync.set({
+      projects: ['foo/bar1', 'foo/bar2'],
+      'foo/bar1': {
+        id: 'foo/bar1',
+        giturl: 'https://github.com/foo/bar1/tree/main',
+        owner: 'foo',
+        repo: 'bar1',
+        ref: 'main',
+      },
+      'foo/bar2': {
+        id: 'foo/bar2',
+        giturl: 'https://github.com/foo/bar2/tree/main',
+        owner: 'foo',
+        repo: 'bar2',
+        ref: 'main',
+      },
+    });
+
+    const set = sandbox.spy(chrome.storage.sync, 'set');
+
+    // stub url cache to match both projects from a content source url
+    sandbox.stub(urlCache, 'get').resolves([
+      { org: 'foo', site: 'bar1' },
+      { org: 'foo', site: 'bar2' },
+    ]);
+
+    // stub content script to return stored project selection
+    sandbox.stub(chrome.tabs, 'sendMessage').callsFake(async (
+      _,
+      /** @type {*} */ msg,
+    ) => {
+      if (msg.action === 'getStoredProject') {
+        return { owner: 'foo', repo: 'bar2', ref: 'main' };
+      }
+      return undefined;
+    });
+
+    // disable the stored project (bar2, not bar1)
+    await internalActions.enableDisableProject(
+      mockTab('https://foo.sharepoint.com/sites/foo/test', { id: 1 }),
+    );
+    expect(set.calledWith({
+      'foo/bar2': {
+        id: 'foo/bar2',
+        giturl: 'https://github.com/foo/bar2/tree/main',
+        owner: 'foo',
+        repo: 'bar2',
+        ref: 'main',
+        disabled: true,
+      },
+    })).to.be.true;
+
+    // verify which projects were written
+    const setKeys = set.args.map((a) => Object.keys(a[0]).join(','));
+    expect(setKeys.join('|'), 'set call keys').to.not.include('foo/bar1');
+  }).timeout(5000);
+
+  it('internal: enableDisableProject refuses without stored project on multiple matches', async () => {
+    // ensure clean storage with exactly two projects
+    chrome.storage.sync.clear();
+    chrome.storage.session.clear();
+    chrome.storage.sync.set({
+      projects: ['foo/bar3', 'foo/bar4'],
+      'foo/bar3': {
+        id: 'foo/bar3',
+        owner: 'foo',
+        repo: 'bar3',
+        ref: 'main',
+      },
+      'foo/bar4': {
+        id: 'foo/bar4',
+        owner: 'foo',
+        repo: 'bar4',
+        ref: 'main',
+      },
+    });
+
+    const set = sandbox.spy(chrome.storage.sync, 'set');
+    const sendMessageSpy = sandbox.spy(chrome.tabs, 'sendMessage');
+
+    // stub url cache to match both projects from a content source url
+    sandbox.stub(urlCache, 'get').resolves([
+      { org: 'foo', site: 'bar3' },
+      { org: 'foo', site: 'bar4' },
+    ]);
+
+    // no stored project (sendMessage returns undefined by default)
+    await internalActions.enableDisableProject(
+      mockTab('https://foo.sharepoint.com/sites/foo/test', { id: 1 }),
+    );
+
+    // should not toggle any project
+    expect(set.notCalled).to.be.true;
+
+    // should show notification asking user to pick a project
+    expect(sendMessageSpy.calledWithMatch(1, {
+      action: 'show_notification',
+    })).to.be.true;
+  }).timeout(5000);
+
+  it('internal: enableDisableProject handles content script not available on multiple matches', async () => {
+    // ensure clean storage with exactly two projects
+    chrome.storage.sync.clear();
+    chrome.storage.session.clear();
+    chrome.storage.sync.set({
+      projects: ['foo/bar5', 'foo/bar6'],
+      'foo/bar5': {
+        id: 'foo/bar5',
+        owner: 'foo',
+        repo: 'bar5',
+        ref: 'main',
+      },
+      'foo/bar6': {
+        id: 'foo/bar6',
+        owner: 'foo',
+        repo: 'bar6',
+        ref: 'main',
+      },
+    });
+
+    const set = sandbox.spy(chrome.storage.sync, 'set');
+
+    // stub url cache to match both projects from a content source url
+    sandbox.stub(urlCache, 'get').resolves([
+      { org: 'foo', site: 'bar5' },
+      { org: 'foo', site: 'bar6' },
+    ]);
+
+    // content script not available (sendMessage throws)
+    const sendMessageStub = sandbox.stub(chrome.tabs, 'sendMessage')
+      .callsFake(async (_tabId, { action }) => {
+        if (action === 'getStoredProject') {
+          throw new Error('Could not establish connection');
+        }
+        return undefined;
+      });
+
+    await internalActions.enableDisableProject(
+      mockTab('https://foo.sharepoint.com/sites/foo/test', { id: 1 }),
+    );
+
+    // should not toggle any project
+    expect(set.notCalled).to.be.true;
+
+    // should show notification asking user to pick a project
+    expect(sendMessageStub.calledWithMatch(1, {
+      action: 'show_notification',
+    })).to.be.true;
+  }).timeout(5000);
+
   it('internal: enableDisableProject shows correct project name in notification', async () => {
+    // ensure clean storage with a single project
+    chrome.storage.sync.clear();
+    chrome.storage.session.clear();
+    chrome.storage.sync.set({
+      projects: ['foo/bar'],
+      'foo/bar': {
+        id: 'foo/bar',
+        giturl: 'https://github.com/foo/bar/tree/main',
+        owner: 'foo',
+        repo: 'bar',
+        ref: 'main',
+      },
+    });
+
     const sendMessageStub = sandbox.spy(chrome.tabs, 'sendMessage');
     const i18nSpy = sandbox.spy(chrome.i18n, 'getMessage');
 
     // disable project - should show notification with project name
-    await internalActions.enableDisableProject(mockTab('https://main--bar--foo.hlx.page/', {
+    await internalActions.enableDisableProject(mockTab('https://main--bar--foo.aem.page/', {
       id: 1,
     }));
 
@@ -734,88 +1007,52 @@ describe('Test actions', () => {
     expect(i18nSpy.calledWith('config_project_disabled', 'foo/bar')).to.be.true;
   });
 
-  describe('internal: importProjects', () => {
-    let sendMessageStub;
-    let i18nSpy;
-
-    function mockLegacySidekickResponse(projects = []) {
-      sandbox.stub(chrome.runtime, 'sendMessage')
-        .callsFake(async (_, { action }, callback) => {
-          switch (action) {
-            case 'ping':
-              // @ts-ignore
-              callback(true);
-              break;
-            case 'getProjects':
-              // @ts-ignore
-              callback(projects);
-              break;
-            default:
-              // @ts-ignore
-              callback();
-          }
-        });
-    }
-
-    beforeEach(() => {
-      sendMessageStub = sandbox.spy(chrome.tabs, 'sendMessage');
-      i18nSpy = sandbox.spy(chrome.i18n, 'getMessage');
-      sandbox.stub(chrome.runtime, 'getManifest').returns({
-        ...chrome.runtime.getManifest(),
-        externally_connectable: {
-          ids: ['klmnopqrstuvwxyz'],
-        },
-      });
+  it('internal: enableDisableProject shows correct notification when enabling', async () => {
+    // ensure clean storage with a single disabled project
+    chrome.storage.sync.clear();
+    chrome.storage.session.clear();
+    chrome.storage.sync.set({
+      projects: ['foo/bar'],
+      'foo/bar': {
+        id: 'foo/bar',
+        giturl: 'https://github.com/foo/bar/tree/main',
+        owner: 'foo',
+        repo: 'bar',
+        ref: 'main',
+        disabled: true,
+      },
     });
 
-    afterEach(() => {
-      sandbox.restore();
-    });
+    // verify storage state
+    const stored = await chrome.storage.sync.get('projects');
+    expect(stored.projects, 'projects list').to.deep.equal(['foo/bar']);
+    const bar = await chrome.storage.sync.get('foo/bar');
+    expect(/** @type {*} */ (bar['foo/bar']).disabled, 'foo/bar is disabled').to.be.true;
 
-    it('single project', async () => {
-      mockLegacySidekickResponse([CONFIGS[0]]);
-      sandbox.stub(chrome.storage.sync, 'get').resolves({ projects: [] });
+    const sendMessageStub = sandbox.stub(chrome.tabs, 'sendMessage')
+      .callsFake(async (_, /** @type {*} */ msg) => (msg.action === 'ping' ? true : undefined));
+    sandbox.stub(chrome.tabs.onUpdated, 'addListener')
+      .callsFake((/** @type {*} */ cb) => cb(1, { status: 'complete' }));
 
-      await internalActions.importProjects(mockTab(`https://main--bar--foo.${process.env.HLX_PROD_SERVER_HOST_PAGE}/`, {
-        id: 2,
-      }));
-      expect(i18nSpy.calledWith('config_project_imported_single', '1')).to.be.true;
+    // enable project - should show notification with enabled message
+    await internalActions.enableDisableProject(mockTab(`https://main--bar--foo.${process.env.HLX_PROD_SERVER_HOST_PAGE}/`, {
+      id: 1,
+    }));
 
-      expect(sendMessageStub.calledWithMatch(2, { action: 'show_notification' })).to.be.true;
-    });
-
-    it('multiple project', async () => {
-      mockLegacySidekickResponse(CONFIGS);
-      sandbox.stub(chrome.storage.sync, 'get').resolves({ projects: [] });
-
-      await internalActions.importProjects(mockTab(`https://main--bar--foo.${process.env.HLX_PROD_SERVER_HOST_PAGE}/`, {
-        id: 2,
-      }));
-
-      expect(i18nSpy.calledWith('config_project_imported_multiple', '2')).to.be.true;
-      expect(sendMessageStub.calledWithMatch(2, { action: 'show_notification' })).to.be.true;
-    });
-
-    it('no projects', async () => {
-      mockLegacySidekickResponse([CONFIGS[1]]);
-      sandbox.stub(chrome.storage.sync, 'get').resolves({ 'foo/bar2': CONFIGS[1] });
-
-      await internalActions.importProjects(mockTab(`https://main--bar--foo.${process.env.HLX_PROD_SERVER_HOST_PAGE}/`, {
-        id: 2,
-      }));
-
-      expect(i18nSpy.calledWith('config_project_imported_none', '0')).to.be.true;
-      expect(sendMessageStub.calledWithMatch(2, { action: 'show_notification' })).to.be.true;
-    });
+    const notifCalls = sendMessageStub.args
+      .filter((a) => a[1] && /** @type {*} */ (a[1]).action === 'show_notification')
+      .map((a) => `tabId=${a[0]},headline=${/** @type {*} */ (a[1]).headline},message=${/** @type {*} */ (a[1]).message}`);
+    expect(notifCalls.length, `notification calls: ${notifCalls.join(' | ')}`).to.be.greaterThan(0);
+    expect(notifCalls[0]).to.include('config_project_enabled');
   });
 
   it('internal: manageProjects', async () => {
     const createSpy = sandbox.spy(chrome.tabs, 'create');
-    await internalActions.manageProjects(mockTab('https://main--bar--foo.hlx.page/', {
+    await internalActions.manageProjects(mockTab('https://main--bar--foo.aem.page/', {
       id: 2,
     }));
     expect(createSpy.calledWithMatch({
-      url: 'https://labs.aem.live/tools/project-admin/index.html',
+      url: 'https://tools.aem.live/tools/project-admin/index.html',
       openerTabId: 2,
       windowId: 0,
     })).to.be.true;
@@ -1286,7 +1523,7 @@ describe('Test actions', () => {
         top: '10px',
         left: '20px',
       },
-    }, { tab: mockTab('https://main--bar--foo.hlx.page/', { id: 1 }) });
+    }, { tab: mockTab('https://main--bar--foo.aem.page/', { id: 1 }) });
     expect(sendMessageStub.calledWith(1, {
       action: 'resize_palette',
       id: 'my-plugin',
@@ -1302,35 +1539,35 @@ describe('Test actions', () => {
     sandbox.resetHistory();
 
     // width only (missing height)
-    resp = await externalActions.resizePalette({ id: 'my-plugin', rect: { width: '600px' } }, { tab: mockTab('https://main--bar--foo.hlx.page/', { id: 1 }) });
+    resp = await externalActions.resizePalette({ id: 'my-plugin', rect: { width: '600px' } }, { tab: mockTab('https://main--bar--foo.aem.page/', { id: 1 }) });
     expect(sendMessageStub.called).to.be.false;
     expect(resp).to.be.false;
 
     sandbox.resetHistory();
 
     // height only (missing width)
-    resp = await externalActions.resizePalette({ id: 'my-plugin', rect: { height: '400px' } }, { tab: mockTab('https://main--bar--foo.hlx.page/', { id: 1 }) });
+    resp = await externalActions.resizePalette({ id: 'my-plugin', rect: { height: '400px' } }, { tab: mockTab('https://main--bar--foo.aem.page/', { id: 1 }) });
     expect(sendMessageStub.called).to.be.false;
     expect(resp).to.be.false;
 
     sandbox.resetHistory();
 
     // no palette ID
-    resp = await externalActions.resizePalette({ rect: { width: '600px', height: '400px' } }, { tab: mockTab('https://main--bar--foo.hlx.page/', { id: 1 }) });
+    resp = await externalActions.resizePalette({ rect: { width: '600px', height: '400px' } }, { tab: mockTab('https://main--bar--foo.aem.page/', { id: 1 }) });
     expect(sendMessageStub.called).to.be.false;
     expect(resp).to.be.false;
 
     sandbox.resetHistory();
 
     // no rect
-    resp = await externalActions.resizePalette({ id: 'my-plugin' }, { tab: mockTab('https://main--bar--foo.hlx.page/', { id: 1 }) });
+    resp = await externalActions.resizePalette({ id: 'my-plugin' }, { tab: mockTab('https://main--bar--foo.aem.page/', { id: 1 }) });
     expect(sendMessageStub.called).to.be.false;
     expect(resp).to.be.false;
 
     sandbox.resetHistory();
 
     // empty rect
-    resp = await externalActions.resizePalette({ id: 'my-plugin', rect: {} }, { tab: mockTab('https://main--bar--foo.hlx.page/', { id: 1 }) });
+    resp = await externalActions.resizePalette({ id: 'my-plugin', rect: {} }, { tab: mockTab('https://main--bar--foo.aem.page/', { id: 1 }) });
     expect(sendMessageStub.called).to.be.false;
     expect(resp).to.be.false;
 
@@ -1345,7 +1582,7 @@ describe('Test actions', () => {
 
     // error sending message
     sendMessageStub.rejects(error);
-    resp = await externalActions.resizePalette({ id: 'my-plugin', rect: { width: '600px', height: '400px' } }, { tab: mockTab('https://main--bar--foo.hlx.page/', { id: 1 }) });
+    resp = await externalActions.resizePalette({ id: 'my-plugin', rect: { width: '600px', height: '400px' } }, { tab: mockTab('https://main--bar--foo.aem.page/', { id: 1 }) });
     expect(resp).to.be.false;
   });
 
@@ -1363,7 +1600,7 @@ describe('Test actions', () => {
         top: '10px',
         left: '20px',
       },
-    }, { tab: mockTab('https://main--bar--foo.hlx.page/', { id: 1 }) });
+    }, { tab: mockTab('https://main--bar--foo.aem.page/', { id: 1 }) });
     expect(sendMessageStub.calledWith(1, {
       action: 'resize_popover',
       id: 'my-plugin',
@@ -1379,42 +1616,42 @@ describe('Test actions', () => {
     sandbox.resetHistory();
 
     // successful resize with width and height only
-    resp = await externalActions.resizePopover({ id: 'my-plugin', rect: { width: '600px', height: '400px' } }, { tab: mockTab('https://main--bar--foo.hlx.page/', { id: 1 }) });
+    resp = await externalActions.resizePopover({ id: 'my-plugin', rect: { width: '600px', height: '400px' } }, { tab: mockTab('https://main--bar--foo.aem.page/', { id: 1 }) });
     expect(sendMessageStub.calledWith(1, { action: 'resize_popover', id: 'my-plugin', rect: { width: '600px', height: '400px' } })).to.be.true;
     expect(resp).to.be.true;
 
     sandbox.resetHistory();
 
     // width only (missing height)
-    resp = await externalActions.resizePopover({ id: 'my-plugin', rect: { width: '600px' } }, { tab: mockTab('https://main--bar--foo.hlx.page/', { id: 1 }) });
+    resp = await externalActions.resizePopover({ id: 'my-plugin', rect: { width: '600px' } }, { tab: mockTab('https://main--bar--foo.aem.page/', { id: 1 }) });
     expect(sendMessageStub.called).to.be.false;
     expect(resp).to.be.false;
 
     sandbox.resetHistory();
 
     // height only (missing width)
-    resp = await externalActions.resizePopover({ id: 'my-plugin', rect: { height: '400px' } }, { tab: mockTab('https://main--bar--foo.hlx.page/', { id: 1 }) });
+    resp = await externalActions.resizePopover({ id: 'my-plugin', rect: { height: '400px' } }, { tab: mockTab('https://main--bar--foo.aem.page/', { id: 1 }) });
     expect(sendMessageStub.called).to.be.false;
     expect(resp).to.be.false;
 
     sandbox.resetHistory();
 
     // no popover ID
-    resp = await externalActions.resizePopover({ rect: { width: '600px', height: '400px' } }, { tab: mockTab('https://main--bar--foo.hlx.page/', { id: 1 }) });
+    resp = await externalActions.resizePopover({ rect: { width: '600px', height: '400px' } }, { tab: mockTab('https://main--bar--foo.aem.page/', { id: 1 }) });
     expect(sendMessageStub.called).to.be.false;
     expect(resp).to.be.false;
 
     sandbox.resetHistory();
 
     // no rect
-    resp = await externalActions.resizePopover({ id: 'my-plugin' }, { tab: mockTab('https://main--bar--foo.hlx.page/', { id: 1 }) });
+    resp = await externalActions.resizePopover({ id: 'my-plugin' }, { tab: mockTab('https://main--bar--foo.aem.page/', { id: 1 }) });
     expect(sendMessageStub.called).to.be.false;
     expect(resp).to.be.false;
 
     sandbox.resetHistory();
 
     // empty rect
-    resp = await externalActions.resizePopover({ id: 'my-plugin', rect: {} }, { tab: mockTab('https://main--bar--foo.hlx.page/', { id: 1 }) });
+    resp = await externalActions.resizePopover({ id: 'my-plugin', rect: {} }, { tab: mockTab('https://main--bar--foo.aem.page/', { id: 1 }) });
     expect(sendMessageStub.called).to.be.false;
     expect(resp).to.be.false;
 
@@ -1429,7 +1666,25 @@ describe('Test actions', () => {
 
     // error sending message
     sendMessageStub.rejects(error);
-    resp = await externalActions.resizePopover({ id: 'my-plugin', rect: { width: '600px', height: '400px' } }, { tab: mockTab('https://main--bar--foo.hlx.page/', { id: 1 }) });
+    resp = await externalActions.resizePopover({ id: 'my-plugin', rect: { width: '600px', height: '400px' } }, { tab: mockTab('https://main--bar--foo.aem.page/', { id: 1 }) });
     expect(resp).to.be.false;
+  });
+
+  it('external: bustCache', async () => {
+    const updateSessionRulesStub = sandbox.stub(chrome.declarativeNetRequest, 'updateSessionRules').resolves();
+
+    const tab = mockTab('https://example.com/page');
+    let result = await externalActions.bustCache({}, { tab });
+    expect(result).to.be.true;
+    expect(updateSessionRulesStub.calledOnce).to.be.true;
+
+    updateSessionRulesStub.resetHistory();
+    result = await externalActions.bustCache({ host: 'custom.host' }, { tab });
+    expect(result).to.be.true;
+    expect(updateSessionRulesStub.calledOnce).to.be.true;
+
+    expect(await externalActions.bustCache({}, { tab: null })).to.be.false;
+    expect(await externalActions.bustCache({}, {})).to.be.false;
+    expect(await externalActions.bustCache({}, { tab: mockTab('https://a.com', { active: false }) })).to.be.false;
   });
 });

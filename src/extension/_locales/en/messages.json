@@ -137,6 +137,38 @@
     "close_sidekick": {
       "message": "Close Sidekick"
     },
+    "column_name_url": {
+      "message": "url",
+      "description": "URL column name"
+    },
+    "column_name_urls": {
+      "message": "urls",
+      "description": "URLs column name"
+    },
+    "column_name_path": {
+      "message": "path",
+      "description": "Path column name"
+    },
+    "column_name_paths": {
+      "message": "paths",
+      "description": "Paths column name"
+    },
+    "column_name_href": {
+      "message": "href",
+      "description": "HREF column name"
+    },
+    "column_name_hrefs": {
+      "message": "hrefs",
+      "description": "HREFs column name"
+    },
+    "column_name_link": {
+      "message": "link",
+      "description": "Link column name"
+    },
+    "column_name_links": {
+      "message": "links",
+      "description": "Links column name"
+    },
     "config_add_success": {
       "message": "Project added to Sidekick"
     },
@@ -176,29 +208,15 @@
     "config_project_exists": {
       "message": "A configuration for this project already exists."
     },
-    "config_project_import": {
-      "message": "Import projects from AEM Sidekick v6"
-    },
-    "config_project_imported_none": {
-      "message": "No new projects found in AEM Sidekick v6."
-    },
-    "config_project_imported_single": {
-      "message": "Successfully imported 1 project from AEM Sidekick v6."
-    },
-    "config_project_imported_multiple": {
-      "message": "Successfully imported $1 projects from AEM Sidekick v6."
-    },
-    "config_project_import_headline": {
-      "message": "Import projects"
-    },
-    "config_project_import_sidekick_not_found": {
-      "message": "Legacy sidekick not found. If the extension is installed but currently disabled, please enable it and try again."
-    },
     "config_project_manage": {
       "message": "Manage projects"
     },
     "config_project_pick": {
       "message": "Pick a project"
+    },
+    "config_project_pick_first": {
+      "message": "Please pick a project first.",
+      "description": "Error message when user tries to add/remove a project without picking one from the config picker"
     },
     "config_project_remove": {
       "message": "Remove this project"
@@ -247,6 +265,9 @@
     "copy_urls": {
       "message": "Copy $1 URLs"
     },
+    "copy_all_values": {
+      "message": "Copy all values"
+    },
     "copy_urls_error": {
       "message": "Copy to clipboard failed. Please try again."
     },
@@ -255,6 +276,9 @@
     },
     "dark_mode": {
       "message": "Dark theme"
+    },
+    "drag_to_reposition": {
+      "message": "Drag to reposition"
     },
     "delete": {
       "message": "Delete"
@@ -336,6 +360,9 @@
     },
     "error_logout": {
       "message": "Sign out failed. Please try again later."
+    },
+    "error_preview_4XX": {
+      "message": "Preview generation failed. Check details for more information."
     },
     "error_preview": {
       "message": "Preview generation failed. Please try again later."
@@ -457,6 +484,12 @@
     "site_login_required": {
       "message": "Please sign in to continue."
     },
+    "site_login_hint": {
+      "message": "Hold down the Alt (Option) key while clicking “Sign in” to select a specific account."
+    },
+    "site_login_auto": {
+      "message": "Don't show this dialog again"
+    },
     "site_relogin_required": {
       "message": "Access expired. Please sign in again to continue."
     },
@@ -573,6 +606,12 @@
     "not_authorized": {
       "message": "Not authorized"
     },
+    "login_hint_401": {
+      "message": "Sign in with AEM Sidekick"
+    },
+    "login_hint_403": {
+      "message": "Switch to a different user with AEM Sidekick"
+    },
     "login_wait": {
       "message": "Please sign in..."
     },
@@ -615,7 +654,8 @@
       "message": "Are you sure you want to $1 this?"
     },
     "destructive_confirmation_prompt": {
-      "message": "Type $1 to confirm"
+      "message": "Type the text below to confirm:",
+      "description": "Instruction in destructive confirmation dialog."
     },
     "destructive_confirmation_invalid": {
       "message": "Sorry, please enter the text exactly as displayed to confirm."
@@ -708,11 +748,8 @@
     "AEM_BACKEND_FILE_TOO_BIG": {
       "message": "Unable to preview $1: file larger than 100MB"
     },
-    "AEM_BACKEND_MP4_TOO_LONG": {
-      "message": "Unable to preview $1: MP4 is longer than 2 minutes"
-    },
-    "AEM_BACKEND_MP4_BIT_RATE_TOO_HIGH": {
-      "message": "Unable to preview $1: MP4 bit rate is higher than 300KB/s"
+    "AEM_BACKEND_MP4_TOO_BIG": {
+      "message": "Unable to preview $1: MP4 is larger than $2"
     },
     "AEM_BACKEND_MP4_PARSING_FAILED": {
       "message": "Unable to preview $1: invalid MP4"
@@ -740,5 +777,11 @@
     },
     "AEM_BACKEND_DOC_IMAGE_TOO_BIG": {
       "message": "Unable to preview $1: contained image larger than $2"
+    },
+    "AEM_BACKEND_CONFIG_NOT_SUPPORTED": {
+      "message": "This site is now managed in the configuration service."
+    },
+    "AEM_NOT_PRIMARY_CONTENT": {
+      "message": "Content updates are restricted to the primary site."
     }
 }

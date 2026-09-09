@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "__MSG_title__",
-  "version": "7.22.2",
+  "version": "7.34.0",
   "author": "Adobe",
   "homepage_url": "https://www.aem.live/docs/sidekick",
   "default_locale": "en",
@@ -22,11 +22,6 @@
     "type": "module"
   },
   "externally_connectable": {
-    "ids": [
-      "ccfggkjabjahcjoljmgmklhpaccedipo",
-      "olciodlegapfmemadcjicljalmfmlehb",
-      "ahahnfffoakmmahloojpkmlkjjffnial"
-    ],
     "matches": [
       "http://localhost:3000/*",
       "https://*/*"
@@ -35,22 +30,22 @@
   "web_accessible_resources": [
     {
       "resources": [
+        "*.js.map",
         "_locales/*",
+        "config.js",
         "content.js",
         "context-menu.js",
-        "index.js",
-        "*.js.map",
         "display.js",
-        "config.js",
+        "index.js",
         "lib/polyfills.min.js",
         "log.js",
+        "login-hint.js",
+        "project.js",
         "sp-popover.js",
         "sp-tray.js",
         "tab.js",
-        "project.js",
-        "utis/admin.js",
-        "utils/rum.js",
         "url-cache.js",
+        "utils/*",
         "views/json/*",
         "views/login/*"
       ],

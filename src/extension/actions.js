@@ -11,21 +11,19 @@
  */
 
 import { log } from './log.js';
+import { addCacheBusterRule } from './cache-buster.js';
 import { setAuthToken } from './auth.js';
 import {
   addProject,
-  getProjectFromUrl,
   toggleProject,
   deleteProject,
   isValidProject,
   getProject,
   getProjects,
   getProjectMatches,
-  importLegacyProjects,
-  detectLegacySidekick,
   updateProject as updateProjectConfig,
 } from './project.js';
-import { ADMIN_ORIGIN, createAdminUrl } from './utils/admin.js';
+import { ADMIN_ORIGIN, ADMIN_ORIGIN_NEW, createAdminUrl } from './utils/admin.js';
 import { getConfig } from './config.js';
 import { getDisplay, setDisplay } from './display.js';
 import { urlCache } from './url-cache.js';
@@ -55,7 +53,8 @@ async function updateAuthToken({
 }, { tab }) {
   if (owner) {
     try {
-      if (new URL(tab.url).origin === ADMIN_ORIGIN
+      const { origin } = new URL(tab.url);
+      if ((origin === ADMIN_ORIGIN || origin === ADMIN_ORIGIN_NEW)
         && authToken !== undefined) {
         await setAuthToken(
           owner,
@@ -99,12 +98,36 @@ export function notificationConfirmCallback(tabId) {
 }
 
 /**
+ * Waits for the sidekick's message listener to be ready in a tab.
+ * @param {number} tabId The tab ID
+ * @param {number} [timeout=10000] Maximum time to wait in ms
+ */
+/* eslint-disable no-await-in-loop */
+async function waitForSidekick(tabId, timeout = 10000) {
+  const start = Date.now();
+  while (Date.now() - start < timeout) {
+    try {
+      const resp = await chrome.tabs.sendMessage(tabId, { action: 'ping' });
+      if (resp) {
+        return;
+      }
+    } catch (e) {
+      // sidekick not ready yet
+    }
+    await new Promise((resolve) => {
+      setTimeout(resolve, 200);
+    });
+  }
+}
+/* eslint-enable no-await-in-loop */
+
+/**
  * Shows a notification in the sidekick
  * @param {*} data
  * @param {*} callback
  */
 export async function showSidekickNotification(tabId, data, callback) {
-  chrome.tabs.sendMessage(tabId, { action: 'show_notification', ...data }, callback);
+  return chrome.tabs.sendMessage(tabId, { action: 'show_notification', ...data }, callback);
 }
 
 /**
@@ -115,7 +138,7 @@ export async function showSidekickNotification(tabId, data, callback) {
 function isTrustedOrigin(origin) {
   const TRUSTED_ORIGINS = [
     ADMIN_ORIGIN,
-    'https://labs.aem.live',
+    ADMIN_ORIGIN_NEW,
     'https://tools.aem.live',
     'http://localhost:3000',
   ];
@@ -125,7 +148,6 @@ function isTrustedOrigin(origin) {
   }
 
   const TRUSTED_ORIGIN_PATTERNS = [
-    /^https:\/\/[a-z0-9-]+--helix-labs-website--adobe\.aem\.(page|live)$/, // labs
     /^https:\/\/[a-z0-9-]+--helix-tools-website--adobe\.aem\.(page|live)$/, // tools
   ];
 
@@ -338,7 +360,26 @@ async function login({
  */
 async function addRemoveProject(tab) {
   const matches = await getProjectMatches(await getProjects(), tab);
-  const config = matches.length === 1 ? matches[0] : await getProjectFromUrl(tab);
+  let config;
+  if (matches.length === 1) {
+    [config] = matches;
+  } else {
+    // multiple matches, check if the content script has a stored project selection
+    try {
+      config = await chrome.tabs.sendMessage(tab.id, { action: 'getStoredProject' });
+    } catch (e) {
+      // content script not available
+    }
+    if (!config) {
+      // multiple matches but no stored project, ask user to pick first
+      await showSidekickIfHidden();
+      await showSidekickNotification(tab.id, {
+        message: chrome.i18n.getMessage('config_project_pick_first'),
+        headline: chrome.i18n.getMessage('config_project_pick'),
+      });
+      return;
+    }
+  }
 
   await showSidekickIfHidden();
   if (isValidProject(config)) {
@@ -372,51 +413,67 @@ async function addRemoveProject(tab) {
  * @param {chrome.tabs.Tab} tab The tab
  */
 async function enableDisableProject(tab) {
-  const { id } = tab;
-  const cfg = await getProjectFromUrl(tab);
-  const project = await getProject(cfg);
-
-  await showSidekickIfHidden();
-  if (await toggleProject(cfg)) {
-    const i18nKey = project.disabled
-      ? 'config_project_enabled'
-      : 'config_project_disabled';
-    const i18nHeadlineKey = project.disabled
-      ? 'config_project_enabled_headline'
-      : 'config_project_disabled_headline';
-
-    await showSidekickNotification(tab.id,
-      {
-        message: chrome.i18n.getMessage(i18nKey, project.project || project.id),
-        headline: chrome.i18n.getMessage(i18nHeadlineKey),
-      },
-      notificationConfirmCallback(id));
-  }
-}
-
-/**
- * Imports projects from legacy sidekick.
- */
-async function importProjects(tab) {
-  const sidekickId = await detectLegacySidekick();
-  await showSidekickIfHidden();
-  if (!sidekickId) {
-    await showSidekickNotification(tab.id,
-      {
-        message: chrome.i18n.getMessage('config_project_import_sidekick_not_found'),
-        headline: chrome.i18n.getMessage('config_project_import_headline'),
+  const matches = await getProjectMatches(await getProjects(), tab);
+  let config;
+  if (matches.length === 1) {
+    [config] = matches;
+  } else {
+    // multiple matches, check if the content script has a stored project selection
+    try {
+      config = await chrome.tabs.sendMessage(tab.id, { action: 'getStoredProject' });
+    } catch (e) {
+      // content script not available
+    }
+    if (!config) {
+      // multiple matches but no stored project, ask user to pick first
+      await showSidekickIfHidden();
+      await showSidekickNotification(tab.id, {
+        message: chrome.i18n.getMessage('config_project_pick_first'),
+        headline: chrome.i18n.getMessage('config_project_pick'),
       });
+      return;
+    }
+  }
+
+  const project = await getProject(config);
+  if (!project) {
     return;
   }
-  const imported = await importLegacyProjects(sidekickId);
-  const i18nKey = imported > 0
-    ? `config_project_imported_${imported === 1 ? 'single' : 'multiple'}`
-    : 'config_project_imported_none';
-  await showSidekickNotification(tab.id,
-    {
-      message: chrome.i18n.getMessage(i18nKey, `${imported}`),
-      headline: chrome.i18n.getMessage('config_project_import_headline'),
-    });
+
+  await showSidekickIfHidden();
+  const enabling = project.disabled;
+  const i18nKey = enabling
+    ? 'config_project_enabled'
+    : 'config_project_disabled';
+  const i18nHeadlineKey = enabling
+    ? 'config_project_enabled_headline'
+    : 'config_project_disabled_headline';
+  const notification = {
+    message: chrome.i18n.getMessage(i18nKey, project.project || project.id),
+    headline: chrome.i18n.getMessage(i18nHeadlineKey),
+  };
+
+  if (await toggleProject(config)) {
+    if (enabling) {
+      // reload tab so the content script and sidekick load before sending the notification
+      await new Promise((resolve) => {
+        chrome.tabs.onUpdated.addListener(function onComplete(tabId, info) {
+          if (tabId === tab.id && info.status === 'complete') {
+            chrome.tabs.onUpdated.removeListener(onComplete);
+            resolve();
+          }
+        });
+        notificationConfirmCallback(tab.id)();
+      });
+      // wait for sidekick to initialize after page load
+      await waitForSidekick(tab.id);
+    }
+    await showSidekickNotification(
+      tab.id,
+      notification,
+      !enabling ? notificationConfirmCallback(tab.id) : undefined,
+    );
+  }
 }
 
 /**
@@ -425,7 +482,7 @@ async function importProjects(tab) {
  */
 async function manageProjects(tab) {
   await chrome.tabs.create({
-    url: 'https://labs.aem.live/tools/project-admin/index.html',
+    url: 'https://tools.aem.live/tools/project-admin/index.html',
     openerTabId: tab.id,
     windowId: tab.windowId,
   });
@@ -615,20 +672,30 @@ async function updateProject(_, { config }) {
 }
 
 /**
- * Actions which can be executed via internal messaging API.
- * @type {Object} The internal actions
+ * Adds request headers for a given domain to bypass the browser cache.
+ * @param {chrome.tabs.Tab} tab The tab
+ * @param {Object} msg The message object
+ * @param {string} msg.host The host to bust cache for (defaults to tab host)
+ * @returns {Promise<boolean>} True if browser cache was busted, else false
  */
-export const internalActions = {
-  addRemoveProject,
-  enableDisableProject,
-  manageProjects,
-  openViewDocSource,
-  importProjects,
-  getProfilePicture,
-  guessAEMSite,
-  updateProject,
-  saveDocument,
-};
+async function bustCache(tab, { host }) {
+  if (!tab || !tab.url || !tab.active) {
+    return false;
+  }
+  return addCacheBusterRule(host || new URL(tab.url).hostname);
+}
+
+/**
+ * Adds request headers for a given domain to bypass the browser cache.
+ * @param {Object} msg The message object
+ * @param {string} msg.host The host to bust cache for (defaults to tab host)
+ * @param {Object} sender The sender object
+ * @param {chrome.tabs.Tab} sender.tab The tab
+ * @returns {Promise<boolean>} True if browser cache was busted, else false
+ */
+async function externalBustCache({ host }, { tab }) {
+  return bustCache(tab, { host });
+}
 
 /**
  * Resizes the palette in the sender's tab.
@@ -704,6 +771,22 @@ async function resizePopover({
 }
 
 /**
+ * Actions which can be executed via internal messaging API.
+ * @type {Object} The internal actions
+ */
+export const internalActions = {
+  addRemoveProject,
+  enableDisableProject,
+  manageProjects,
+  openViewDocSource,
+  getProfilePicture,
+  guessAEMSite,
+  updateProject,
+  saveDocument,
+  bustCache,
+};
+
+/**
  * Actions which can be executed via external messaging API.
  * @type {Object} The external actions
  */
@@ -720,4 +803,5 @@ export const externalActions = {
   resizePopover,
   closePalette,
   closePopover,
+  bustCache: externalBustCache,
 };

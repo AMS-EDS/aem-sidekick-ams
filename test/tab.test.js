@@ -56,7 +56,6 @@ describe('Test check-tab', () => {
   function fakeListenerCallback({ msg, api = chrome.runtime.onMessage, tab = TABS[1] }) {
     const stub = sandbox.stub(api, 'addListener')
       .callsFake((callback) => {
-        // @ts-ignore - Chrome types are not fully accurate
         callback(msg, { tab }, () => {});
         return true;
       });
@@ -249,8 +248,103 @@ describe('Test check-tab', () => {
     })).to.be.true;
   });
 
+  it('checkTab: queries content script for stored project on multiple matches', async () => {
+    const tab = TABS[5]; // sharepoint content source URL
+
+    sandbox.restore();
+
+    sandbox.stub(chrome.storage.local, 'get')
+      .withArgs('display')
+      .resolves({ display: true });
+
+    executeScriptSpy = sandbox.spy(chrome.scripting, 'executeScript');
+
+    onMessageAddListenerStub = fakeListenerCallback({
+      msg: { isAEM: true },
+      tab,
+    });
+
+    getTabSpy = sandbox.stub(chrome.tabs, 'get')
+      .callsFake(async (id) => TABS[String(id)]);
+
+    // two projects that both match the same content source URL
+    const multiProjects = {
+      'foo/bar': { owner: 'foo', repo: 'bar', ref: 'main' },
+      'foo/baz': { owner: 'foo', repo: 'baz', ref: 'main' },
+    };
+    fakeGetProjects(multiProjects);
+
+    // stub url cache to return multiple matches
+    sandbox.stub(urlCache, 'set').resolves();
+    sandbox.stub(urlCache, 'get').resolves([
+      { org: 'foo', site: 'bar' },
+      { org: 'foo', site: 'baz' },
+    ]);
+
+    // stub sendMessage to return stored project
+    const sendMessageStub = sandbox.stub(chrome.tabs, 'sendMessage')
+      .callsFake(async (_tabId, msg) => {
+        if (/** @type {*} */ (msg)?.action === 'getStoredProject') {
+          return { owner: 'foo', repo: 'baz', ref: 'main' };
+        }
+        return undefined;
+      });
+
+    await checkTab(tab.id);
+
+    // verify content script was queried for stored project
+    expect(sendMessageStub.calledWithMatch(sinon.match.any, { action: 'getStoredProject' })).to.be.true;
+  });
+
+  it('checkTab: disabled project excluded from content script but included in UI', async () => {
+    const tab = TABS[1]; // https://main--blog--adobe.aem.page/
+
+    sandbox.restore();
+
+    sandbox.stub(chrome.storage.local, 'get')
+      .withArgs('display')
+      .resolves({ display: true });
+
+    executeScriptSpy = sandbox.spy(chrome.scripting, 'executeScript');
+
+    onMessageAddListenerStub = fakeListenerCallback({
+      msg: { isAEM: true },
+      tab,
+    });
+
+    getTabSpy = sandbox.stub(chrome.tabs, 'get')
+      .callsFake(async (id) => TABS[String(id)]);
+
+    // disabled project matching the tab URL
+    const disabledProject = {
+      'adobe/blog': {
+        owner: 'adobe',
+        repo: 'blog',
+        ref: 'main',
+        disabled: true,
+      },
+    };
+    fakeGetProjects(disabledProject);
+
+    sandbox.stub(urlCache, 'set').resolves();
+    sandbox.stub(urlCache, 'get').resolves([]);
+
+    const sendMessageStub = sandbox.stub(chrome.tabs, 'sendMessage');
+
+    await checkTab(tab.id);
+
+    // content script is injected but receives no config matches (disabled filtered)
+    expect(executeScriptSpy.calledWith({
+      target: { tabId: tab.id },
+      files: ['./content.js'],
+    })).to.be.true;
+    const configMatchesMsg = sendMessageStub.args
+      .find((a) => /** @type {*} */ (a[1])?.configMatches);
+    expect(configMatchesMsg).to.not.be.undefined;
+    expect(/** @type {*} */ (configMatchesMsg[1]).configMatches.length).to.equal(0);
+  });
+
   it('getCurrentTab', async () => {
-    // @ts-ignore
     sandbox.stub(chrome.tabs, 'query').withArgs({ active: true, currentWindow: true }).resolves([TABS[1]]);
     const tab = await getCurrentTab();
     expect(tab).to.equal(TABS[1]);

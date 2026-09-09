@@ -111,6 +111,53 @@ describe('Test App Store', () => {
     expect(appStore.siteStore.project).to.eq('AEM Boilerplate');
   });
 
+  it('loadContext - adds theme parameter to palette and popover plugin URLs', async () => {
+    sidekickTest
+      .mockFetchSidekickConfigSuccess(false, false, {
+        plugins: [
+          {
+            id: 'palette-plugin',
+            title: 'Palette Plugin',
+            url: 'https://example.com/palette.html',
+            isPalette: true,
+          },
+          {
+            id: 'popover-plugin',
+            title: 'Popover Plugin',
+            url: 'https://example.com/popover.html',
+            isPopover: true,
+          },
+          {
+            id: 'regular-plugin',
+            title: 'Regular Plugin',
+            url: 'https://example.com/regular.html',
+          },
+        ],
+      });
+
+    await appStore.loadContext(sidekickElement, defaultSidekickConfig);
+
+    // Wait for plugins to be loaded
+    await waitUntil(() => Object.keys(appStore.customPlugins).length > 0);
+
+    // Check palette plugin has theme parameter
+    const palettePlugin = appStore.customPlugins['palette-plugin'];
+    expect(palettePlugin).to.exist;
+    expect(palettePlugin.config.url).to.include('theme=');
+    expect(palettePlugin.config.url).to.include(`theme=${appStore.theme}`);
+
+    // Check popover plugin has theme parameter
+    const popoverPlugin = appStore.customPlugins['popover-plugin'];
+    expect(popoverPlugin).to.exist;
+    expect(popoverPlugin.config.url).to.include('theme=');
+    expect(popoverPlugin.config.url).to.include(`theme=${appStore.theme}`);
+
+    // Check regular plugin does NOT have theme parameter
+    const regularPlugin = appStore.customPlugins['regular-plugin'];
+    expect(regularPlugin).to.exist;
+    expect(regularPlugin.config.url).to.not.include('theme=');
+  });
+
   it('loadContext - loads german dictionary', async () => {
     sidekickTest
       .mockFetchSidekickConfigSuccess(true, true)
@@ -260,10 +307,45 @@ describe('Test App Store', () => {
     appStore.location.search = '?id=/foo/video.mp4&referrer=StreamWebApp&view=ebe25cbf-40ca-4fe7-b345-2de37449b94e';
     expect(appStore.isEditor()).to.be.true;
 
+    // personalized share link
+    appStore.location.host = 'adobe.sharepoint.com';
+    appStore.location.pathname = '/:w:/s/InsideAEM/IQB2_1hdZU0gSYp9nMR30_UVARQ7In-vvmVhGh65KMgqaMI';
+    appStore.location.search = '?email=user%40adobe.com&e=narBDC';
+    expect(appStore.isEditor()).to.be.true;
+
     appStore.location.pathname = '';
     appStore.location.search = '';
     appStore.location.host = 'docs.google.com';
     expect(appStore.isEditor()).to.be.true;
+  });
+
+  it('isSharePointShareLink()', async () => {
+    await appStore.loadContext(sidekickElement, defaultSidekickConfig);
+    appStore.location.port = '';
+
+    // word document share link
+    let url = new URL('https://adobe.sharepoint.com/:w:/s/InsideAEM/IQB2_1hdZU0gSYp9nMR30_UVARQ7In-vvmVhGh65KMgqaMI?email=user%40adobe.com&e=narBDC');
+    expect(appStore.isSharePointShareLink(url)).to.be.true;
+
+    // excel document share link
+    url = new URL('https://adobe.sharepoint.com/:x:/s/InsideAEM/EncodedId123?email=user%40adobe.com&e=abc');
+    expect(appStore.isSharePointShareLink(url)).to.be.true;
+
+    // powerpoint share link
+    url = new URL('https://adobe.sharepoint.com/:p:/s/InsideAEM/EncodedId456?email=user%40adobe.com&e=def');
+    expect(appStore.isSharePointShareLink(url)).to.be.true;
+
+    // regular editor URL with /_layouts/15/ is not a share link
+    url = new URL('https://adobe.sharepoint.com/:w:/r/sites/InsideAEM/_layouts/15/Doc.aspx?sourcedoc=%7B5D58FF76%7D&file=doc.docx&action=default&mobileredirect=true');
+    expect(appStore.isSharePointShareLink(url)).to.be.false;
+
+    // regular DM URL is not a share link
+    url = new URL('https://adobe.sharepoint.com/sites/foo/Shared%20Documents/Forms/AllItems.aspx');
+    expect(appStore.isSharePointShareLink(url)).to.be.false;
+
+    // non-SharePoint URL
+    url = new URL('https://docs.google.com/:w:/something');
+    expect(appStore.isSharePointShareLink(url)).to.be.false;
   });
 
   it('isSharePointFolder()', async () => {
@@ -371,6 +453,26 @@ describe('Test App Store', () => {
         'Status never loaded',
       );
       expect(appStore.status.webPath).to.equal('/');
+    });
+
+    it('strips trailing .html extension from document paths', async () => {
+      sidekickTest
+        .mockFetchStatusSuccess();
+      await instance.loadContext(sidekickElement, defaultSidekickConfig);
+      sidekickTest.sandbox.stub(instance, 'isEditor').returns(false);
+      sidekickTest.sandbox.stub(instance, 'isAdmin').returns(false);
+      const getStatusStub = sidekickTest.sandbox
+        .stub(instance.api, 'getStatus')
+        .resolves({ webPath: '/foo' });
+
+      instance.location.pathname = '/foo.html';
+      await instance.fetchStatus();
+      expect(getStatusStub.calledWith('/foo')).to.be.true;
+
+      // non-document extensions are left untouched
+      instance.location.pathname = '/data.json';
+      await instance.fetchStatus();
+      expect(getStatusStub.calledWith('/data.json')).to.be.true;
     });
 
     it('unauthorized', async () => {
@@ -593,17 +695,6 @@ describe('Test App Store', () => {
       expect(openPage.calledWith(mockStatus.preview.url)).to.be.true;
     });
 
-    it('switches from editor to preview w/cache busting', async () => {
-      instance.location = new URL(getDefaultEditorEnviromentLocations(
-        HelixMockContentSources.SHAREPOINT,
-        HelixMockContentType.DOC),
-      );
-      instance.status = mockStatus;
-      await instance.switchEnv('preview', false, true);
-      const openPageArgs = openPage.args[0];
-      expect(openPageArgs[0]).to.include('nocache');
-    });
-
     it('switches from preview to editor', async () => {
       const fetchStatusSpy = sidekickTest.sandbox.spy(instance, 'fetchStatus');
       instance.location = new URL(mockStatus.preview.url);
@@ -619,10 +710,9 @@ describe('Test App Store', () => {
 
       instance.location = new URL(mockStatus.preview.url);
       instance.status = mockStatus;
-      await instance.switchEnv('prod', true, true);
+      await instance.switchEnv('prod', true);
       const openPageArgs = openPage.args[0];
       expect(openPageArgs[0]).to.include(prodHost);
-      expect(openPageArgs[0]).to.include('nocache');
     });
 
     it('switches from preview to production host, maintains url params', async () => {
@@ -631,10 +721,9 @@ describe('Test App Store', () => {
 
       instance.location = new URL(`${mockStatus.preview.url}?foo=bar`);
       instance.status = mockStatus;
-      await instance.switchEnv('prod', true, true);
+      await instance.switchEnv('prod', true);
       const openPageArgs = openPage.args[0];
       expect(openPageArgs[0]).to.include(prodHost);
-      expect(openPageArgs[0]).to.include('nocache');
       expect(openPageArgs[0]).to.include('foo=bar');
     });
 
@@ -648,7 +737,7 @@ describe('Test App Store', () => {
 
       instance.location = new URL(mockStatus.preview.url);
       instance.status = mockStatus;
-      await instance.switchEnv('prod', true, true, true);
+      await instance.switchEnv('prod', true, true);
       const openPageArgs = openPage.args[0];
       expect(openPageArgs[0]).to.include(prodHost);
     });
@@ -663,18 +752,35 @@ describe('Test App Store', () => {
 
       instance.location = new URL(mockStatus.preview.url);
       instance.status = mockStatus;
-      await instance.switchEnv('prod', true, true, true);
+      await instance.switchEnv('prod', true, true);
       const openPageArgs = openPage.args[0];
       expect(openPageArgs[0]).to.include(liveHost);
     });
 
-    it('switches from preview to BYOM editor', async () => {
+    it('switches from preview to BYOM editor, no edit URL', async () => {
       instance.siteStore.contentSourceUrl = 'https://aemcloud.com';
       instance.siteStore.contentSourceEditLabel = 'Universal Editor';
       instance.siteStore.contentSourceEditPattern = '{{contentSourceUrl}}{{pathname}}?cmd=open';
 
       const fetchStatusStub = sidekickTest.sandbox.stub(instance, 'fetchStatus');
       fetchStatusStub.resolves({ webPath: '/' });
+
+      instance.location = new URL(mockStatus.preview.url);
+      instance.status = mockStatus;
+      await instance.switchEnv('edit');
+      expect(loadPage.calledWith('https://aemcloud.com/index?cmd=open')).to.be.true;
+    });
+
+    it('switches from preview to BYOM editor, overwrites edit URL ', async () => {
+      instance.siteStore.contentSourceUrl = 'https://aemcloud.com';
+      instance.siteStore.contentSourceEditLabel = 'Universal Editor';
+      instance.siteStore.contentSourceEditPattern = '{{contentSourceUrl}}{{pathname}}?cmd=open';
+
+      const fetchStatusStub = sidekickTest.sandbox.stub(instance, 'fetchStatus');
+      fetchStatusStub.onCall(0).resolves({
+        webPath: '/',
+        edit: { url: 'https://edit.example.com/original-path' },
+      });
 
       instance.location = new URL(mockStatus.preview.url);
       instance.status = mockStatus;
@@ -766,12 +872,12 @@ describe('Test App Store', () => {
       expect(loadPageArgs[0]).to.include('/regular/path');
     });
 
-    it('switches from preview to live w/cache busting', async () => {
+    it('switches from preview to live', async () => {
       instance.location = new URL(mockStatus.preview.url);
       instance.status = mockStatus;
-      await instance.switchEnv('live', true, true);
+      await instance.switchEnv('live', true);
       const openPageArgs = openPage.args[0];
-      expect(openPageArgs[0]).to.include('nocache');
+      expect(openPageArgs[0]).to.include(instance.siteStore.outerHost);
     });
 
     it('switches from preview to dev', async () => {
@@ -891,48 +997,6 @@ describe('Test App Store', () => {
 
       expect(response).to.be.true;
       expect(setStateStub.calledWith(STATE.CONFIG)).to.be.true;
-    });
-
-    it('should bust client cache', async () => {
-      sidekickTest.sandbox.stub(instance, 'isDev').returns(false);
-      instance.isPreview.returns(true);
-      instance.status = { webPath: '/somepath' };
-      instance.siteStore.innerHost = `main--aem-boilerplate--adobe.${process.env.HLX_PROD_SERVER_HOST_PAGE}`;
-
-      fakeFetch.resolves({
-        ok: true,
-        status: 200,
-        headers: new Headers(),
-        json: () => Promise.resolve({ webPath: '/somepath' }),
-      });
-
-      const response = await instance.update();
-
-      expect(response).to.be.true;
-      expect(fakeFetch.args[1][0]).to.equal(`https://main--aem-boilerplate--adobe.${process.env.HLX_PROD_SERVER_HOST_PAGE}/somepath`);
-      expect(fakeFetch.args[1][1]).to.deep.equal({ cache: 'reload', mode: 'no-cors' });
-    });
-
-    it('should bust client cache (localhost)', async () => {
-      sidekickTest.sandbox.stub(instance, 'isDev').returns(true);
-      instance.isPreview.returns(true);
-      instance.siteStore.devUrl = new URL('http://localhost:3000');
-      instance.location = new URL('http://localhost:3000/somepath');
-      instance.siteStore.innerHost = `main--aem-boilerplate--adobe.${process.env.HLX_PROD_SERVER_HOST_PAGE}`;
-      instance.status = { webPath: '/somepath' };
-
-      fakeFetch.resolves({
-        ok: true,
-        status: 200,
-        headers: new Headers(),
-        json: () => Promise.resolve({ webPath: '/somepath' }),
-      });
-
-      const response = await instance.update();
-
-      expect(response).to.be.true;
-      expect(fakeFetch.args[1][0]).to.equal('localhost:3000/somepath');
-      expect(fakeFetch.args[1][1]).to.deep.equal({ cache: 'reload', mode: 'no-cors' });
     });
 
     it('should handle fetch error', async () => {
@@ -1055,7 +1119,7 @@ describe('Test App Store', () => {
         message: 'Snapshot successfully updated, opening Review...',
         variant: 'positive',
       })).is.true;
-      expect(switchEnvSpy.calledWith('review', false, true)).is.true;
+      expect(switchEnvSpy.calledWith('review', false)).is.true;
     });
   });
 
@@ -1692,6 +1756,22 @@ describe('Test App Store', () => {
       expect(frameUrl.searchParams.get('url')).to.equal('https://main--aem-boilerplate--adobe.aem.page/protected');
       expect(frameUrl.searchParams.get('status')).to.equal('403');
     });
+
+    it('clears the auto-login attempt when the delivery page loads successfully', async () => {
+      isProjectStub.returns(true);
+      instance.location = new URL('https://main--aem-boilerplate--adobe.aem.page/');
+      instance.siteStore.owner = 'adobe';
+      instance.siteStore.repo = 'aem-boilerplate';
+      sinon.stub(instance, 'findViews').returns([]);
+      const removeLocal = sinon.spy(chrome.storage.local, 'remove');
+
+      // no error <pre>, so the page is not an error page
+      document.body.innerHTML = '';
+      await instance.showView();
+
+      // the attempt is cleared asynchronously (fire-and-forget)
+      await waitUntil(() => removeLocal.calledWith('autoLoginAttempt'));
+    });
   });
 
   describe('getProfile', () => {
@@ -1947,7 +2027,8 @@ describe('Test App Store', () => {
       instance.sidekick.addEventListener.callsFake((event, callback) => callback());
 
       await instance.validateSession();
-      expect(instance.login.calledOnceWith(true)).to.be.true;
+      expect(instance.login.calledOnce).to.be.true;
+      expect(instance.login.calledWith(true)).to.be.false;
     });
 
     it('should resolve immediately if token is not expired', async () => {

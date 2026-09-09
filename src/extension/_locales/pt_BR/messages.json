@@ -1,4 +1,7 @@
 {
+  "AEM_BACKEND_CONFIG_NOT_SUPPORTED": {
+    "message": "Este site agora é gerenciado no serviço de configuração."
+  },
   "AEM_BACKEND_DOC_IMAGE_TOO_BIG": {
     "message": "Não é possível pré-visualizar $1: a imagem contida tem mais de $2"
   },
@@ -20,14 +23,11 @@
   "AEM_BACKEND_JSON_INVALID": {
     "message": "Não é possível visualizar $2: JSON inválido"
   },
-  "AEM_BACKEND_MP4_BIT_RATE_TOO_HIGH": {
-    "message": "Não é possível visualizar $1: a taxa de bits do MP4 é maior que 300 KB/s"
-  },
   "AEM_BACKEND_MP4_PARSING_FAILED": {
     "message": "Não é possível visualizar $1: MP4 inválido"
   },
-  "AEM_BACKEND_MP4_TOO_LONG": {
-    "message": "Não é possível visualizar $1: o MP4 tem mais de 2 minutos"
+  "AEM_BACKEND_MP4_TOO_BIG": {
+    "message": "Não é possível visualizar $1: o arquivo MP4 é maior que $2"
   },
   "AEM_BACKEND_NON_MATCHING_MEDIA": {
     "message": "Não é possível visualizar $1: esperava $2, mas encontrou $3"
@@ -64,6 +64,9 @@
   },
   "AEM_BACKEND_VALIDATION_FAILED": {
     "message": "Não é possível visualizar $1: $2"
+  },
+  "AEM_NOT_PRIMARY_CONTENT": {
+    "message": "As atualizações de conteúdo são restritas ao site principal."
   },
   "activate": {
     "message": "Ativar"
@@ -200,6 +203,30 @@
   "code_state": {
     "message": "Nenhuma ação disponível para arquivos de código"
   },
+  "column_name_href": {
+    "message": "href"
+  },
+  "column_name_hrefs": {
+    "message": "hrefs"
+  },
+  "column_name_link": {
+    "message": "link"
+  },
+  "column_name_links": {
+    "message": "links"
+  },
+  "column_name_path": {
+    "message": "caminho"
+  },
+  "column_name_paths": {
+    "message": "caminhos"
+  },
+  "column_name_url": {
+    "message": "URL"
+  },
+  "column_name_urls": {
+    "message": "URLs"
+  },
   "config_add_project_headline": {
     "message": "Projeto adicionado"
   },
@@ -233,29 +260,14 @@
   "config_project_exists": {
     "message": "Já existe uma configuração para este projeto."
   },
-  "config_project_import": {
-    "message": "Importar projetos do AEM Sidekick v6"
-  },
-  "config_project_import_headline": {
-    "message": "Importar projetos"
-  },
-  "config_project_import_sidekick_not_found": {
-    "message": "Sidekick legado não encontrado. Se a extensão estiver instalada, mas desabilitada no momento, habilite-a e tente novamente."
-  },
-  "config_project_imported_multiple": {
-    "message": "$1 projetos importados com sucesso do AEM Sidekick v6."
-  },
-  "config_project_imported_none": {
-    "message": "Nenhum novo projeto encontrado no AEM Sidekick v6."
-  },
-  "config_project_imported_single": {
-    "message": "1 projeto importado com sucesso do AEM Sidekick v6."
-  },
   "config_project_manage": {
     "message": "Gerenciar projetos"
   },
   "config_project_pick": {
     "message": "Escolha um projeto"
+  },
+  "config_project_pick_first": {
+    "message": "Escolha um projeto primeiro."
   },
   "config_project_remove": {
     "message": "Remover este projeto"
@@ -283,6 +295,9 @@
   },
   "copy": {
     "message": "Copiar"
+  },
+  "copy_all_values": {
+    "message": "Copiar todos os valores"
   },
   "copy_live_url": {
     "message": "Copiar URL ativo"
@@ -360,7 +375,7 @@
     "message": "Insira o texto exatamente como exibido para confirmar."
   },
   "destructive_confirmation_prompt": {
-    "message": "Digite $1 para confirmar"
+    "message": "Digite o texto abaixo para confirmar:"
   },
   "details": {
     "message": "Detalhes"
@@ -370,6 +385,9 @@
   },
   "docs": {
     "message": "https://www.aem.live/docs/sidekick"
+  },
+  "drag_to_reposition": {
+    "message": "Arraste para reposicionar"
   },
   "edit": {
     "message": "Editar"
@@ -421,6 +439,9 @@
   },
   "error_preview": {
     "message": "Falha ao gerar a pré-visualização. Tente novamente mais tarde."
+  },
+  "error_preview_4XX": {
+    "message": "Falha ao gerar a prévia. Verifique os detalhes para mais informações."
   },
   "error_preview_config": {
     "message": "Falha ao ativar a configuração: $1"
@@ -496,6 +517,12 @@
   },
   "logging_out_state": {
     "message": "Saindo..."
+  },
+  "login_hint_401": {
+    "message": "Fazer logon com o AEM Sidekick"
+  },
+  "login_hint_403": {
+    "message": "Alternar para um usuário diferente com o AEM Sidekick"
   },
   "login_required_state": {
     "message": "Faça logon para continuar"
@@ -652,6 +679,12 @@
   },
   "site_login_required": {
     "message": "Faça logon para continuar."
+  },
+  "site_login_hint": {
+    "message": "Mantenha pressionada a tecla Alt (Option) ao clicar em «Fazer logon» para selecionar uma conta específica."
+  },
+  "site_login_auto": {
+    "message": "Não mostrar esta caixa de diálogo novamente"
   },
   "site_protected": {
     "message": "Este site está protegido"

@@ -15,14 +15,13 @@ import { internalActions } from './actions.js';
 import { getDisplay } from './display.js';
 import {
   GH_URL,
-  detectLegacySidekick,
   getProject,
   isValidProject,
 } from './project.js';
 
 /**
  * The configuration object type
- * @typedef {import('@Types').OptionsDerivedConfig} OptionsDerivedConfig
+ * @typedef {import('@Types').SidekickOptionsConfig} SidekickOptionsConfig
  */
 
 /**
@@ -30,7 +29,7 @@ import {
  * @prop {number} [id] The tab ID
  * @prop {string} [url] The tab URL
  * @prop {Object} [config] The project config
- * @prop {OptionsDerivedConfig[]} [matches] The config matches
+ * @prop {SidekickOptionsConfig[]} [matches] The config matches
  * @prop {number} [numProjects] The total number of project configs
  * @description The context object
  */
@@ -53,11 +52,11 @@ let updateInProgress = false;
  * @returns {Object<number, string>} The icon paths
  */
 function getPaths(type) {
+  /** @type {Object<number, string>} */
   const paths = {};
   for (const size of ICON_SIZES) {
     paths[size] = `icons/${type}/icon-${size}x${size}.png`;
   }
-  // @ts-ignore
   return paths;
 }
 
@@ -67,7 +66,8 @@ function getPaths(type) {
  */
 export async function updateIcon({ matches = [] }) {
   let iconType = 'disabled';
-  if (matches.length > 0 && isValidProject(matches[0])) {
+  const activeMatches = matches.filter((m) => !m.disabled);
+  if (activeMatches.length > 0 && isValidProject(activeMatches[0])) {
     if (await getDisplay()) {
       iconType = 'default';
     } else {
@@ -120,7 +120,7 @@ async function guessAEMSite(id) {
  * @param {Context} context The context object
  */
 export async function updateContextMenu({
-  id, url, config, numProjects = 0,
+  id, url, config, matches = [], numProjects = 0,
 }) {
   if (id === undefined || !url) {
     return;
@@ -129,6 +129,10 @@ export async function updateContextMenu({
     updateInProgress = true;
     // clear context menu
     await chrome.contextMenus.removeAll();
+
+    if (!config && matches.length === 1) {
+      [config] = matches;
+    }
 
     if (isValidProject(config) && !url.startsWith(GH_URL)) {
       const { owner, repo } = config;
@@ -177,23 +181,6 @@ export async function updateContextMenu({
         ],
       });
     }
-    if (await detectLegacySidekick()) {
-      // import legacy projects
-      await chrome.contextMenus.create({
-        id: 'separator',
-        type: 'separator',
-        contexts: [
-          'action',
-        ],
-      });
-      await chrome.contextMenus.create({
-        id: 'importProjects',
-        title: chrome.i18n.getMessage('config_project_import'),
-        contexts: [
-          'action',
-        ],
-      });
-    }
     updateInProgress = false;
   }
 }
@@ -210,7 +197,9 @@ export async function updateUI(context = {}) {
 // add listener for clicks on context menu item
 if (chrome.contextMenus) {
   chrome.contextMenus.onClicked.addListener(async ({ menuItemId }, tab) => {
-    if (!tab.url) return;
+    if (!tab.url) {
+      return;
+    }
     internalActions[menuItemId](tab);
     await chrome.scripting.executeScript({
       target: { tabId: tab.id },
@@ -223,7 +212,6 @@ if (chrome.contextMenus) {
           window.hlx = window.hlx || {};
           window.hlx.sidekick = window.hlx.sidekick || { location: window.location };
 
-          // @ts-ignore
           const action = `${menuItemIdVal}`.replaceAll(/([A-Z])/g, `-${'$1'}`).toLowerCase();
           sampleRUM('click', {
             source: 'sidekick',

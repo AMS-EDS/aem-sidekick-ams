@@ -1,4 +1,7 @@
 {
+  "AEM_BACKEND_CONFIG_NOT_SUPPORTED": {
+    "message": "Ce site est désormais géré dans le service de configuration."
+  },
   "AEM_BACKEND_DOC_IMAGE_TOO_BIG": {
     "message": "Impossible de prévisualiser $1 : l’image contenue dépasse $2."
   },
@@ -20,14 +23,11 @@
   "AEM_BACKEND_JSON_INVALID": {
     "message": "Impossible de prévisualiser $2 : JSON non valide"
   },
-  "AEM_BACKEND_MP4_BIT_RATE_TOO_HIGH": {
-    "message": "Impossible de prévisualiser $1 : le débit MP4 est supérieur à 300 Ko/s."
-  },
   "AEM_BACKEND_MP4_PARSING_FAILED": {
     "message": "Impossible de prévisualiser $1 : fichier MP4 non valide."
   },
-  "AEM_BACKEND_MP4_TOO_LONG": {
-    "message": "Impossible de prévisualiser $1 : le fichier MP4 dépasse 2 minutes."
+  "AEM_BACKEND_MP4_TOO_BIG": {
+    "message": "Impossible de prévisualiser $1 : le fichier MP4 dépasse $2."
   },
   "AEM_BACKEND_NON_MATCHING_MEDIA": {
     "message": "Impossible de prévisualiser $1 : $2 attendu, mais $3 trouvé"
@@ -64,6 +64,9 @@
   },
   "AEM_BACKEND_VALIDATION_FAILED": {
     "message": "Impossible de prévisualiser $1 : $2"
+  },
+  "AEM_NOT_PRIMARY_CONTENT": {
+    "message": "Les mises à jour du contenu sont limitées au site principal."
   },
   "activate": {
     "message": "Activer"
@@ -200,6 +203,30 @@
   "code_state": {
     "message": "Aucune action disponible pour les fichiers de code"
   },
+  "column_name_href": {
+    "message": "href"
+  },
+  "column_name_hrefs": {
+    "message": "hrefs"
+  },
+  "column_name_link": {
+    "message": "lien"
+  },
+  "column_name_links": {
+    "message": "liens"
+  },
+  "column_name_path": {
+    "message": "chemin"
+  },
+  "column_name_paths": {
+    "message": "Chemins"
+  },
+  "column_name_url": {
+    "message": "url"
+  },
+  "column_name_urls": {
+    "message": "url"
+  },
   "config_add_project_headline": {
     "message": "Projet ajouté"
   },
@@ -233,29 +260,14 @@
   "config_project_exists": {
     "message": "Une configuration pour ce projet existe déjà."
   },
-  "config_project_import": {
-    "message": "Importer des projets depuis AEM Sidekick v6"
-  },
-  "config_project_import_headline": {
-    "message": "Importer des projets"
-  },
-  "config_project_import_sidekick_not_found": {
-    "message": "Sidekick hérité introuvable. Si l’extension est installée, mais actuellement désactivée, veuillez l’activer et réessayer."
-  },
-  "config_project_imported_multiple": {
-    "message": "$1 projets importés depuis AEM Sidekick v6."
-  },
-  "config_project_imported_none": {
-    "message": "Aucun nouveau projet trouvé dans AEM Sidekick v6."
-  },
-  "config_project_imported_single": {
-    "message": "Un projet importé depuis AEM Sidekick v6."
-  },
   "config_project_manage": {
     "message": "Gérer les projets"
   },
   "config_project_pick": {
     "message": "Choisissez un projet"
+  },
+  "config_project_pick_first": {
+    "message": "Choisissez d’abord un projet."
   },
   "config_project_remove": {
     "message": "Supprimer ce projet"
@@ -284,6 +296,9 @@
   "copy": {
     "message": "Copier"
   },
+  "copy_all_values": {
+    "message": "Copier toutes les valeurs"
+  },
   "copy_live_url": {
     "message": "Copier l'URL dynamique"
   },
@@ -306,7 +321,7 @@
     "message": "Copier l'URL"
   },
   "copy_urls": {
-    "message": "Copier les URL $1"
+    "message": "Copier $1 URL"
   },
   "copy_urls_error": {
     "message": "La copie dans le presse-papiers a échoué. Veuillez réessayer."
@@ -360,7 +375,7 @@
     "message": "Veuillez saisir le texte exactement tel qu’il est affiché pour confirmer."
   },
   "destructive_confirmation_prompt": {
-    "message": "Tapez $1 pour confirmer."
+    "message": "Saisissez le texte ci-dessous pour confirmer :"
   },
   "details": {
     "message": "Détails"
@@ -370,6 +385,9 @@
   },
   "docs": {
     "message": "https://www.aem.live/docs/sidekick"
+  },
+  "drag_to_reposition": {
+    "message": "Faire glisser pour repositionner"
   },
   "edit": {
     "message": "Modifier"
@@ -421,6 +439,9 @@
   },
   "error_preview": {
     "message": "La génération de la prévisualisation a échoué. Veuillez réessayer ultérieurement."
+  },
+  "error_preview_4XX": {
+    "message": "Échec de la génération de la prévisualisation. Consultez les détails pour plus d’informations."
   },
   "error_preview_config": {
     "message": "Échec de l’activation de la configuration : $1"
@@ -497,6 +518,12 @@
   "logging_out_state": {
     "message": "Déconnexion..."
   },
+  "login_hint_401": {
+    "message": "Se connecter avec AEM Sidekick"
+  },
+  "login_hint_403": {
+    "message": "Basculer vers une autre personne avec AEM Sidekick"
+  },
   "login_required_state": {
     "message": "Connectez-vous pour continuer."
   },
@@ -558,7 +585,7 @@
     "message": "Ouvrir l’URL"
   },
   "open_urls": {
-    "message": "Ouvrir les URL $1"
+    "message": "Ouvrir $1 URL"
   },
   "open_urls_confirm": {
     "message": "Voulez-vous vraiment ouvrir les URL $1 ?"
@@ -652,6 +679,12 @@
   },
   "site_login_required": {
     "message": "Connectez-vous pour continuer."
+  },
+  "site_login_hint": {
+    "message": "Maintenez la touche Alt (Option) enfoncée en cliquant sur « Se connecter » pour sélectionner un compte spécifique."
+  },
+  "site_login_auto": {
+    "message": "Ne plus afficher cette boîte de dialogue"
   },
   "site_protected": {
     "message": "Site protégé"

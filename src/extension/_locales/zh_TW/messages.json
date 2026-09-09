@@ -1,4 +1,7 @@
 {
+  "AEM_BACKEND_CONFIG_NOT_SUPPORTED": {
+    "message": "此網站現在由設定服務進行管理。"
+  },
   "AEM_BACKEND_DOC_IMAGE_TOO_BIG": {
     "message": "無法預覽 $1：包含的影像大於 $2"
   },
@@ -20,14 +23,11 @@
   "AEM_BACKEND_JSON_INVALID": {
     "message": "無法預覽 $2：無效的 JSON"
   },
-  "AEM_BACKEND_MP4_BIT_RATE_TOO_HIGH": {
-    "message": "無法預覽 $1：MP4 位元率高於 300KB/秒"
-  },
   "AEM_BACKEND_MP4_PARSING_FAILED": {
     "message": "無法預覽 $1：無效的 MP4"
   },
-  "AEM_BACKEND_MP4_TOO_LONG": {
-    "message": "無法預覽 $1：MP4 長度超過 2 分鐘"
+  "AEM_BACKEND_MP4_TOO_BIG": {
+    "message": "無法預覽 $1：MP4 大於 $2"
   },
   "AEM_BACKEND_NON_MATCHING_MEDIA": {
     "message": "無法預覽 $1：預期為 $2，但找到 $3"
@@ -64,6 +64,9 @@
   },
   "AEM_BACKEND_VALIDATION_FAILED": {
     "message": "無法預覽 $1：$2"
+  },
+  "AEM_NOT_PRIMARY_CONTENT": {
+    "message": "內容更新僅限於主要網站。"
   },
   "activate": {
     "message": "啟動"
@@ -200,6 +203,30 @@
   "code_state": {
     "message": "沒有可用於程式碼檔案的動作"
   },
+  "column_name_href": {
+    "message": "超文字參考"
+  },
+  "column_name_hrefs": {
+    "message": "超文字參考"
+  },
+  "column_name_link": {
+    "message": "連結"
+  },
+  "column_name_links": {
+    "message": "連結"
+  },
+  "column_name_path": {
+    "message": "路徑"
+  },
+  "column_name_paths": {
+    "message": "路徑"
+  },
+  "column_name_url": {
+    "message": "URL"
+  },
+  "column_name_urls": {
+    "message": "URL"
+  },
   "config_add_project_headline": {
     "message": "已新增專案"
   },
@@ -233,29 +260,14 @@
   "config_project_exists": {
     "message": "此專案的設定已存在。"
   },
-  "config_project_import": {
-    "message": "從 AEM Sidekick v6 中匯入專案"
-  },
-  "config_project_import_headline": {
-    "message": "匯入專案"
-  },
-  "config_project_import_sidekick_not_found": {
-    "message": "找不到舊版 Sidekick。如果擴充功能已安裝但目前已停用，請將其啟用，然後再試一次。"
-  },
-  "config_project_imported_multiple": {
-    "message": "已成功從 AEM Sidekick v6 中匯入 $1 個專案。"
-  },
-  "config_project_imported_none": {
-    "message": "在 AEM Sidekick v6 中找不到新專案。"
-  },
-  "config_project_imported_single": {
-    "message": "已成功從 AEM Sidekick v6 中匯入 1 個專案。"
-  },
   "config_project_manage": {
     "message": "管理專案"
   },
   "config_project_pick": {
     "message": "選取一個專案"
+  },
+  "config_project_pick_first": {
+    "message": "請先選取專案。"
   },
   "config_project_remove": {
     "message": "移除此專案"
@@ -283,6 +295,9 @@
   },
   "copy": {
     "message": "複製"
+  },
+  "copy_all_values": {
+    "message": "複製所有值"
   },
   "copy_live_url": {
     "message": "複製即時 URL"
@@ -360,7 +375,7 @@
     "message": "抱歉，請確切輸入顯示的文字以進行確認。"
   },
   "destructive_confirmation_prompt": {
-    "message": "請輸入「$1」以確認"
+    "message": "請在下方輸入文字以確認："
   },
   "details": {
     "message": "詳細資料"
@@ -370,6 +385,9 @@
   },
   "docs": {
     "message": "https://www.aem.live/docs/sidekick"
+  },
+  "drag_to_reposition": {
+    "message": "拖曳以重新定位"
   },
   "edit": {
     "message": "編輯"
@@ -421,6 +439,9 @@
   },
   "error_preview": {
     "message": "預覽產生失敗。請稍後再試。"
+  },
+  "error_preview_4XX": {
+    "message": "預覽產生失敗。如需更多資訊，請查看詳細資料。"
   },
   "error_preview_config": {
     "message": "啟動設定失敗：$1"
@@ -496,6 +517,12 @@
   },
   "logging_out_state": {
     "message": "正在登出…"
+  },
+  "login_hint_401": {
+    "message": "使用 AEM Sidekick 登入"
+  },
+  "login_hint_403": {
+    "message": "使用 AEM Sidekick 切換至其他使用者"
   },
   "login_required_state": {
     "message": "登入以繼續"
@@ -652,6 +679,12 @@
   },
   "site_login_required": {
     "message": "請登入以繼續。"
+  },
+  "site_login_hint": {
+    "message": "按一下「登入」時按住 Alt (Option) 鍵可選擇特定帳戶。"
+  },
+  "site_login_auto": {
+    "message": "不再顯示此對話方塊"
   },
   "site_protected": {
     "message": "此網站已受保護"

@@ -1,4 +1,7 @@
 {
+  "AEM_BACKEND_CONFIG_NOT_SUPPORTED": {
+    "message": "このサイトは、設定サービスで管理されるようになりました。"
+  },
   "AEM_BACKEND_DOC_IMAGE_TOO_BIG": {
     "message": "$1 をプレビューできません : $2 を超える画像が含まれています"
   },
@@ -20,14 +23,11 @@
   "AEM_BACKEND_JSON_INVALID": {
     "message": "$2 をプレビューできません : 無効な JSON"
   },
-  "AEM_BACKEND_MP4_BIT_RATE_TOO_HIGH": {
-    "message": "$1 をプレビューできません : MP4 ビットレートが 300 KB/秒を超えています"
-  },
   "AEM_BACKEND_MP4_PARSING_FAILED": {
     "message": "$1 をプレビューできません : 無効な MP4"
   },
-  "AEM_BACKEND_MP4_TOO_LONG": {
-    "message": "$1 をプレビューできません : MP4 が 2 分を超えています"
+  "AEM_BACKEND_MP4_TOO_BIG": {
+    "message": "$1 をプレビューできません : MP4 が $2 を超えています"
   },
   "AEM_BACKEND_NON_MATCHING_MEDIA": {
     "message": "$1 をプレビューできません : $2 が期待されましたが、$3 が見つかりました"
@@ -64,6 +64,9 @@
   },
   "AEM_BACKEND_VALIDATION_FAILED": {
     "message": "$1 をプレビューできません : $2"
+  },
+  "AEM_NOT_PRIMARY_CONTENT": {
+    "message": "コンテンツの更新はプライマリサイトに制限されます。"
   },
   "activate": {
     "message": "アクティベート"
@@ -200,6 +203,30 @@
   "code_state": {
     "message": "コードファイルに使用できるアクションはありません"
   },
+  "column_name_href": {
+    "message": "href"
+  },
+  "column_name_hrefs": {
+    "message": "href"
+  },
+  "column_name_link": {
+    "message": "リンク"
+  },
+  "column_name_links": {
+    "message": "リンク"
+  },
+  "column_name_path": {
+    "message": "パス"
+  },
+  "column_name_paths": {
+    "message": "パス"
+  },
+  "column_name_url": {
+    "message": "URL"
+  },
+  "column_name_urls": {
+    "message": "URL"
+  },
   "config_add_project_headline": {
     "message": "プロジェクトを追加しました"
   },
@@ -233,29 +260,14 @@
   "config_project_exists": {
     "message": "このプロジェクトの設定は既に存在します。"
   },
-  "config_project_import": {
-    "message": "AEM Sidekick v6 からプロジェクトを読み込む"
-  },
-  "config_project_import_headline": {
-    "message": "プロジェクトを読み込む"
-  },
-  "config_project_import_sidekick_not_found": {
-    "message": "レガシーサイドキックが見つかりません。拡張機能がインストールされているが現在無効になっている場合は、有効にしてもう一度試してください。"
-  },
-  "config_project_imported_multiple": {
-    "message": "AEM Sidekick v6 から $1 個のプロジェクトを正常に読み込みました。"
-  },
-  "config_project_imported_none": {
-    "message": "AEM Sidekick v6 に新しいプロジェクトが見つかりません。"
-  },
-  "config_project_imported_single": {
-    "message": "AEM Sidekick v6 から 1 個のプロジェクトを正常に読み込みました。"
-  },
   "config_project_manage": {
     "message": "プロジェクトを管理"
   },
   "config_project_pick": {
     "message": "プロジェクトを選択"
+  },
+  "config_project_pick_first": {
+    "message": "最初にプロジェクトを選択してください。"
   },
   "config_project_remove": {
     "message": "このプロジェクトを削除"
@@ -283,6 +295,9 @@
   },
   "copy": {
     "message": "コピー"
+  },
+  "copy_all_values": {
+    "message": "すべての値をコピー"
   },
   "copy_live_url": {
     "message": "ライブ URL をコピー"
@@ -360,7 +375,7 @@
     "message": "申し訳ありませんが、確認のため、表示されているとおりにテキストを正確に入力してください。"
   },
   "destructive_confirmation_prompt": {
-    "message": "「$1」と入力して確認"
+    "message": "以下にテキストを入力して確定します。"
   },
   "details": {
     "message": "詳細"
@@ -370,6 +385,9 @@
   },
   "docs": {
     "message": "https://www.aem.live/docs/sidekick"
+  },
+  "drag_to_reposition": {
+    "message": "ドラッグして再配置"
   },
   "edit": {
     "message": "編集"
@@ -421,6 +439,9 @@
   },
   "error_preview": {
     "message": "プレビューの生成に失敗しました。後で再試行してください。"
+  },
+  "error_preview_4XX": {
+    "message": "プレビューの生成に失敗しました。詳細を確認してください。"
   },
   "error_preview_config": {
     "message": "設定をアクティブ化できませんでした : $1"
@@ -497,6 +518,12 @@
   "logging_out_state": {
     "message": "ログアウト中..."
   },
+  "login_hint_401": {
+    "message": "AEM Sidekick でログイン"
+  },
+  "login_hint_403": {
+    "message": "AEM Sidekick を使用して別のユーザーに切り替え"
+  },
   "login_required_state": {
     "message": "ログインして続行"
   },
@@ -525,7 +552,7 @@
     "message": "変更が見つかりません"
   },
   "no_diffs_subheading": {
-    "message": "プレビュー済みコンテンツと公開済みコンテンツが同じ"
+    "message": "プレビュー済みコンテンツと公開済みコンテンツが同じです"
   },
   "no_results": {
     "message": "結果が見つかりません"
@@ -652,6 +679,12 @@
   },
   "site_login_required": {
     "message": "続行するには、ログインしてください。"
+  },
+  "site_login_hint": {
+    "message": "特定のアカウントを選択するには、Alt（Option）キーを押しながら「サインイン」をクリックします。"
+  },
+  "site_login_auto": {
+    "message": "このダイアログを再表示しない"
   },
   "site_protected": {
     "message": "このサイトは保護されています"

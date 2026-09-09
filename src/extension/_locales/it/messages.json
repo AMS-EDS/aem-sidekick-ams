@@ -1,4 +1,7 @@
 {
+  "AEM_BACKEND_CONFIG_NOT_SUPPORTED": {
+    "message": "Questo sito viene ora gestito nel servizio di configurazione."
+  },
   "AEM_BACKEND_DOC_IMAGE_TOO_BIG": {
     "message": "Impossibile visualizzare in anteprima $1: immagine contenuta superiore a $2"
   },
@@ -12,7 +15,7 @@
     "message": "Impossibile visualizzare in anteprima $1: il file è di dimensioni superiori a 100 MB"
   },
   "AEM_BACKEND_ICO_TOO_BIG": {
-    "message": "Impossibile visualizzare in anteprima $1: ICO è superiore a $2"
+    "message": "Impossibile visualizzare in anteprima $1: ICO superiore a $2"
   },
   "AEM_BACKEND_IMAGE_TOO_BIG": {
     "message": "Impossibile visualizzare in anteprima $1: immagine superiore a $2"
@@ -20,14 +23,11 @@
   "AEM_BACKEND_JSON_INVALID": {
     "message": "Impossibile visualizzare in anteprima $2: JSON non valido"
   },
-  "AEM_BACKEND_MP4_BIT_RATE_TOO_HIGH": {
-    "message": "Impossibile visualizzare in anteprima $1: il bit rate MP4 è superiore a 300 KB/s"
-  },
   "AEM_BACKEND_MP4_PARSING_FAILED": {
     "message": "Impossibile visualizzare in anteprima $1: MP4 non valido"
   },
-  "AEM_BACKEND_MP4_TOO_LONG": {
-    "message": "Impossibile visualizzare in anteprima $1: MP4 è più lungo di 2 minuti"
+  "AEM_BACKEND_MP4_TOO_BIG": {
+    "message": "Impossibile visualizzare in anteprima $1: MP4 superiore a $2"
   },
   "AEM_BACKEND_NON_MATCHING_MEDIA": {
     "message": "Impossibile visualizzare in anteprima $1: previsto $2 ma trovato $3"
@@ -42,7 +42,7 @@
     "message": "Impossibile visualizzare in anteprima $1: nessun handler trovato"
   },
   "AEM_BACKEND_PDF_TOO_BIG": {
-    "message": "Impossibile visualizzare in anteprima $1: PDF è superiore a $2"
+    "message": "Impossibile visualizzare in anteprima $1: PDF superiore a $2"
   },
   "AEM_BACKEND_SVG_PARSING_FAILED": {
     "message": "Impossibile visualizzare in anteprima $1: SVG contiene XML non valido"
@@ -64,6 +64,9 @@
   },
   "AEM_BACKEND_VALIDATION_FAILED": {
     "message": "Impossibile visualizzare in anteprima $1: $2"
+  },
+  "AEM_NOT_PRIMARY_CONTENT": {
+    "message": "Gli aggiornamenti dei contenuti sono limitati al sito principale."
   },
   "activate": {
     "message": "Attiva"
@@ -200,6 +203,30 @@
   "code_state": {
     "message": "Nessuna azione disponibile per i file di codice"
   },
+  "column_name_href": {
+    "message": "href"
+  },
+  "column_name_hrefs": {
+    "message": "hrefs"
+  },
+  "column_name_link": {
+    "message": "collegamento"
+  },
+  "column_name_links": {
+    "message": "collegamenti"
+  },
+  "column_name_path": {
+    "message": "percorso"
+  },
+  "column_name_paths": {
+    "message": "percorsi"
+  },
+  "column_name_url": {
+    "message": "url"
+  },
+  "column_name_urls": {
+    "message": "url"
+  },
   "config_add_project_headline": {
     "message": "Progetto aggiunto"
   },
@@ -233,29 +260,14 @@
   "config_project_exists": {
     "message": "Esiste già una configurazione per questo progetto."
   },
-  "config_project_import": {
-    "message": "Importa progetti da AEM Sidekick v6"
-  },
-  "config_project_import_headline": {
-    "message": "Importa progetti"
-  },
-  "config_project_import_sidekick_not_found": {
-    "message": "Sidekick precedente non trovato. Se l’estensione è installata ma al momento è disabilitata, abilitala e riprova."
-  },
-  "config_project_imported_multiple": {
-    "message": "$1 progetti importati correttamente da AEM Sidekick v6."
-  },
-  "config_project_imported_none": {
-    "message": "Nessun nuovo progetto trovato in AEM Sidekick v6."
-  },
-  "config_project_imported_single": {
-    "message": "$1 progetto importato correttamente da AEM Sidekick v6."
-  },
   "config_project_manage": {
     "message": "Gestisci i progetti"
   },
   "config_project_pick": {
     "message": "Scegli un progetto"
+  },
+  "config_project_pick_first": {
+    "message": "Scegli prima un progetto."
   },
   "config_project_remove": {
     "message": "Rimuovi questo progetto"
@@ -283,6 +295,9 @@
   },
   "copy": {
     "message": "Copia"
+  },
+  "copy_all_values": {
+    "message": "Copia tutti i valori"
   },
   "copy_live_url": {
     "message": "Copia URL live"
@@ -360,7 +375,7 @@
     "message": "Immetti il testo esattamente come visualizzato per confermare."
   },
   "destructive_confirmation_prompt": {
-    "message": "Digita $1 per confermare"
+    "message": "Digita il testo di seguito per confermare:"
   },
   "details": {
     "message": "Dettagli"
@@ -370,6 +385,9 @@
   },
   "docs": {
     "message": "https://www.aem.live/docs/sidekick"
+  },
+  "drag_to_reposition": {
+    "message": "Trascina per riposizionare"
   },
   "edit": {
     "message": "Modifica"
@@ -421,6 +439,9 @@
   },
   "error_preview": {
     "message": "Generazione dell’anteprima non riuscita. Riprova più tardi"
+  },
+  "error_preview_4XX": {
+    "message": "Generazione dell’anteprima non riuscita. Per ulteriori informazioni, controlla i dettagli."
   },
   "error_preview_config": {
     "message": "Impossibile attivare la configurazione: $1"
@@ -496,6 +517,12 @@
   },
   "logging_out_state": {
     "message": "Disconnessione in corso..."
+  },
+  "login_hint_401": {
+    "message": "Accedi con AEM Sidekick"
+  },
+  "login_hint_403": {
+    "message": "Passa a un altro utente con AEM Sidekick"
   },
   "login_required_state": {
     "message": "Accedi per continuare"
@@ -653,6 +680,12 @@
   "site_login_required": {
     "message": "Accedi per continuare."
   },
+  "site_login_hint": {
+    "message": "Tieni premuto il tasto Alt (Opzione) mentre fai clic su «Accedi» per selezionare un account specifico."
+  },
+  "site_login_auto": {
+    "message": "Non mostrare più questa finestra di dialogo"
+  },
   "site_protected": {
     "message": "Questo sito è protetto"
   },
@@ -696,7 +729,7 @@
     "message": "Questa pagina ha ancora un documento di origine e non è possibile annullarne la pubblicazione."
   },
   "unpublish_page_success": {
-    "message": "Annullamento della pubblicazione della pagina eseguito correttamente, ricarica in corso..."
+    "message": "La pubblicazione della pagina è stata annullata, ricaricamento in corso..."
   },
   "unpublishing_state": {
     "message": "Annullamento della pubblicazione in corso..."

@@ -15,35 +15,34 @@
  * @typedef {import('@Types').OptionsConfig} OptionsConfig
  */
 
-/**
- * Removes the cache buster from the URL.
- * @param {string} [href] The URL to remove the cache buster from
- */
-function removeCacheParam(href = window.location.href) {
-  const location = new URL(href);
-  const params = location.searchParams;
-
-  // Check if 'nocache' parameter exists
-  if (params.has('nocache')) {
-    // Remove 'nocache' parameter
-    params.delete('nocache');
-
-    // Update the URL without changing the browser history
-    window.history.replaceState(null, '', location);
-
-    // Now we are on same origin we are safe to reload the cache
-    fetch(location, { cache: 'reload' });
-  }
-
-  return location.href;
-}
-
 (async () => {
   // ensure hlx namespace
   window.hlx = window.hlx || {};
 
   const { getDisplay, toggleDisplay } = await import('./display.js');
   const display = await getDisplay();
+
+  /**
+   * Syncs the visibility of the underlying page content that the sidekick's
+   * special view covers (the <pre> on JSON and pipeline auth error pages). The
+   * content is hidden only while the sidekick is shown with a special view over
+   * it, and restored whenever the sidekick is hidden.
+   * @param {Element} sidekick The sidekick element
+   * @param {boolean} shown Whether the sidekick is currently shown
+   */
+  function syncPageContent(sidekick, shown) {
+    const pre = document.querySelector('pre');
+    // only manage the <pre> on pages where the sidekick renders a special view
+    // over it: JSON views and pipeline auth error pages (no body > main > div)
+    const managesPre = window.location.pathname.endsWith('.json')
+      || !document.querySelector('body > main > div');
+    if (!pre || !managesPre) {
+      return;
+    }
+    const specialViewOpen = sidekick.shadowRoot?.querySelector('.aem-sk-special-view');
+    pre.style.display = shown && specialViewOpen ? 'none' : 'block';
+  }
+
   /**
    * Load the sidekick custom element and add it to the DOM
    * @param {OptionsConfig} config The config to load the sidekick with
@@ -63,8 +62,8 @@ function removeCacheParam(href = window.location.href) {
         'host',
         'devOrigin',
         'transient',
+        'apiUpgrade',
       ].includes(k)));
-    curatedConfig.scriptUrl = chrome.runtime.getURL('index.js');
 
     if (adminVersion) {
       curatedConfig.adminVersion = adminVersion;
@@ -78,6 +77,8 @@ function removeCacheParam(href = window.location.href) {
     sidekick.addEventListener('hidden', () => {
       toggleDisplay();
       sidekick.setAttribute('open', 'false');
+      // restore page content hidden behind a special view (e.g. login view)
+      syncPageContent(sidekick, false);
     });
   }
 
@@ -115,46 +116,52 @@ function removeCacheParam(href = window.location.href) {
     window.hlx.sidekick = configPicker;
   }
 
-  async function onMessageListener({ configMatches = [], adminVersion }, { tab }) {
-    // only accept message from background script
-    if (tab) {
-      return;
+  let configLoaded = false;
+
+  chrome.runtime.onMessage.addListener((message, { tab }, sendResponse) => {
+    if (message.action === 'getStoredProject') {
+      // respond to stored project queries from background script
+      const stored = window.sessionStorage.getItem('aem-sk-project');
+      sendResponse(stored ? JSON.parse(stored) : null);
+      return false;
     }
 
-    // remove cache buster from URL
-    removeCacheParam();
+    // only accept config matches from background script
+    if (tab || configLoaded) {
+      return false;
+    }
+    configLoaded = true;
 
+    const { configMatches = [], adminVersion } = message;
     const sidekick = document.querySelector('aem-sidekick');
     if (configMatches.length > 0) {
       if (sidekick) {
         // Toggle sidekick display
         sidekick.setAttribute('open', `${display}`);
 
-        // Are we on a JSON page?
-        const pre = document.querySelector('pre');
-        if (pre && window.location.pathname.endsWith('.json')) {
-          // If the sidekick is open and the JSON view is open, hide the pre tag, else show it
-          const jsonViewOpen = sidekick.shadowRoot.querySelector('.aem-sk-special-view');
-          pre.style.display = display && jsonViewOpen ? 'none' : 'block';
-        }
+        // sync visibility of page content behind a special view (JSON/error page)
+        syncPageContent(sidekick, display);
       } else if (display) {
         // Load custom element polyfill
-        await import('./lib/polyfills.min.js');
+        import('./lib/polyfills.min.js').then(() => {
+          // Check session storage for previously stored project
+          const storedProject = JSON.parse(window.sessionStorage.getItem('aem-sk-project') || null);
 
-        // Check session storage for previously stored project
-        const storedProject = JSON.parse(window.sessionStorage.getItem('aem-sk-project') || null);
-
-        // First check if there is only one config match, if so load it
-        if (configMatches.length === 1) {
-        // Load sidekick
-          const [cfg] = configMatches;
-          loadSidekick(cfg, adminVersion);
-          // If there is more than one config match, check if we previously stored a project
-        } else if (storedProject) {
-          loadSidekick(storedProject, adminVersion);
-        } else {
-          loadConfigPicker(configMatches);
-        }
+          // First check if there is only one config match, if so load it
+          if (configMatches.length === 1) {
+            // Load sidekick
+            const [cfg] = configMatches;
+            loadSidekick(cfg, adminVersion);
+            // If there is more than one config match, check if we previously stored a project
+          } else if (storedProject) {
+            loadSidekick(storedProject, adminVersion);
+          } else {
+            loadConfigPicker(configMatches);
+          }
+        });
+      } else if (document.querySelector('body > pre')) {
+        // Pipeline auth error page and sidekick is hidden: surface a login hint
+        import('./login-hint.js').then(({ showLoginHint }) => showLoginHint());
       }
     } else if (sidekick) {
       // Remove sidekick
@@ -166,10 +173,6 @@ function removeCacheParam(href = window.location.href) {
     if (configPicker) {
       configPicker.setAttribute('open', `${display}`);
     }
-
-    chrome.runtime.onMessage.removeListener(onMessageListener);
-  }
-
-  // wait for config matches
-  chrome.runtime.onMessage.addListener(onMessageListener);
+    return false;
+  });
 })();

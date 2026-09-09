@@ -15,15 +15,23 @@
  * @property {string} [owner] The owner of the repository.
  * @property {string} [repo] The name of the repository.
  * @property {string} [ref='main'] The reference branch, defaults to 'main'.
- * @property {string} [adminVersion] - The version of the admin to use
+ * @property {string} [adminVersion] The version of the admin service to use.
+ * @property {boolean} [apiUpgrade=false] <code>true</code> if the API upgrade is available.
  */
 
 /**
- * The origin of the Admin API.
+ * The origin of the legacy Admin API.
  * @type {string}
  */
 // export const ADMIN_ORIGIN = 'https://admin.hlx.page';
 export const ADMIN_ORIGIN = `https://admin.${process.env.HLX_PROD_SERVER_HOST_PAGE}`;
+
+/**
+ * The origin of the new Admin API.
+ * @type {string}
+ */
+// export const ADMIN_ORIGIN_NEW = 'https://api.aem.live';
+export const ADMIN_ORIGIN_NEW = `https://api.${process.env.HLX_PROD_SERVER_HOST_LIVE}`;
 
 /**
  * Creates an Admin API URL for an API and path.
@@ -35,19 +43,37 @@ export const ADMIN_ORIGIN = `https://admin.${process.env.HLX_PROD_SERVER_HOST_PA
  */
 export function createAdminUrl(
   {
-    owner, repo, ref = 'main', adminVersion,
+    owner: org, repo: site, ref = 'main', apiUpgrade, adminVersion,
   },
   api,
   path = '',
   searchParams = new URLSearchParams(),
 ) {
-  const adminUrl = new URL(`${ADMIN_ORIGIN}/${api}`);
-  if (owner && repo && ref) {
-    adminUrl.pathname += `/${owner}/${repo}/${ref}`;
+  const adminUrl = new URL(`${apiUpgrade ? ADMIN_ORIGIN_NEW : ADMIN_ORIGIN}`);
+  if (api === 'discover') {
+    adminUrl.pathname = `/${api}${path}`;
+  } else if (org && site) {
+    if (apiUpgrade) {
+      // use new api
+      if (['login', 'logout', 'profile'].includes(api)) {
+        adminUrl.pathname = `/${api}`;
+        adminUrl.searchParams.append('org', org);
+        adminUrl.searchParams.append('site', site);
+      } else {
+        if (api === 'job') {
+          api = 'jobs';
+        }
+        adminUrl.pathname = `/${org}/sites/${site}/${api}`;
+      }
+    } else {
+      // use legacy api
+      adminUrl.pathname = `/${api}/${org}/${site}/${ref}`;
+    }
+    adminUrl.pathname += path;
   }
-  adminUrl.pathname += path;
   if (adminVersion) {
-    searchParams.append('hlx-admin-version', adminVersion);
+    // use a specific ci admin version
+    searchParams.append(apiUpgrade ? 'aem-api-version' : 'hlx-admin-version', adminVersion);
   }
   searchParams.forEach((value, key) => {
     adminUrl.searchParams.append(key, value);
@@ -78,6 +104,10 @@ export async function callAdmin(
   } = {},
 ) {
   const url = createAdminUrl(config, api, path, searchParams);
+  // force async processing for bulk jobs with api upgrade
+  if (body && config.apiUpgrade && ['preview', 'live'].includes(api) && path === '/*') {
+    body.forceAsync = true;
+  }
   return fetch(url, {
     method,
     cache: 'no-store',

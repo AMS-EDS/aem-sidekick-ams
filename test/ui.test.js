@@ -27,6 +27,7 @@ import { error } from './test-utils.js';
 window.chrome = chromeMock;
 
 const sandbox = sinon.createSandbox();
+/** @type {*} */
 const config = {
   owner: 'adobe',
   repo: 'aem-boilerplate',
@@ -62,7 +63,7 @@ describe('Test UI: updateContextMenu', () => {
     removeAllSpy = sandbox.spy(chrome.contextMenus, 'removeAll');
     createSpy = sandbox.spy(chrome.contextMenus, 'create');
     sandbox.stub(chrome.runtime.onMessage, 'addListener')
-      .callsFake((func, _) => func(
+      .callsFake((/** @type {Function} */ func, /** @type {*} */ _) => func(
         { isAEM },
         { tab: { id: 1 } },
       ));
@@ -130,6 +131,28 @@ describe('Test UI: updateContextMenu', () => {
     expect(createSpy.callCount).to.equal(3);
   });
 
+  it('updateContextMenu: config derived from single match', async () => {
+    await updateContextMenu({
+      ...tab,
+      matches: [config],
+    });
+    expect(removeAllSpy.callCount).to.equal(1);
+    expect(createSpy.calledWithMatch({ id: 'addRemoveProject' })).to.be.true;
+  });
+
+  it('updateContextMenu: config derived from single disabled match', async () => {
+    await updateContextMenu({
+      ...tab,
+      matches: [{ ...config, disabled: true }],
+    });
+    expect(removeAllSpy.callCount).to.equal(1);
+    expect(createSpy.calledWithMatch({
+      id: 'enableDisableProject',
+      title: chrome.i18n.getMessage('config_project_enable'),
+    })).to.be.true;
+    expect(createSpy.calledWithMatch({ id: 'addRemoveProject' })).to.be.true;
+  });
+
   it('updateContextMenu: no matching config', async () => {
     isAEM = false;
     await updateContextMenu(tab);
@@ -149,7 +172,6 @@ describe('Test UI: updateContextMenu', () => {
   it('updateContextMenu: chrome.contextMenus API missing', async () => {
     const originalContextMenus = chrome.contextMenus;
     delete chrome.contextMenus;
-    // @ts-ignore
     await updateContextMenu({});
     expect(removeAllSpy.callCount).to.equal(0);
     chrome.contextMenus = originalContextMenus;
@@ -188,29 +210,6 @@ describe('Test UI: updateContextMenu', () => {
     expect(removeAllSpy.callCount).to.equal(1);
     expect(createSpy.callCount).to.equal(0);
   });
-
-  it('updateContextMenu: import projects', async () => {
-    sandbox.stub(chrome.runtime, 'getManifest').returns({
-      ...chrome.runtime.getManifest(),
-      externally_connectable: {
-        ids: ['klmnopqrstuvwxyz'],
-      },
-    });
-    sandbox.stub(chrome.runtime, 'sendMessage')
-      .callsFake(async (_, __, callback) => {
-        if (callback) {
-          // @ts-ignore
-          callback(true);
-        }
-      });
-
-    await updateContextMenu({
-      ...tab,
-      config,
-    });
-    expect(createSpy.calledWithMatch({ type: 'separator' })).to.be.true;
-    expect(createSpy.calledWithMatch({ id: 'importProjects' })).to.be.true;
-  });
 });
 
 describe('Test UI: updateIcon', () => {
@@ -231,6 +230,22 @@ describe('Test UI: updateIcon', () => {
   it('updateIcon: disabled', async () => {
     // disabled
     await updateIcon({});
+    expect(setIconStub.calledWith({
+      path: {
+        16: 'icons/disabled/icon-16x16.png',
+        32: 'icons/disabled/icon-32x32.png',
+        48: 'icons/disabled/icon-48x48.png',
+        128: 'icons/disabled/icon-128x128.png',
+        512: 'icons/disabled/icon-512x512.png',
+      },
+    })).to.be.true;
+  });
+
+  it('updateIcon: disabled project only', async () => {
+    await setDisplay(true);
+    await updateIcon({
+      matches: [{ ...config, disabled: true }],
+    });
     expect(setIconStub.calledWith({
       path: {
         16: 'icons/disabled/icon-16x16.png',
@@ -316,14 +331,6 @@ describe('Test UI: RUM collection when clicked', () => {
     }, tab);
     await aTimeout(1000);
     expect(logSpy.calledWith('sampleRUM', 'click', { source: 'sidekick', target: 'context-menu:enable-disable-project' })).to.be.true;
-  });
-
-  it('collects RUM when importProjects', async () => {
-    clickListener({
-      menuItemId: 'importProjects',
-    }, tab);
-    await aTimeout(1000);
-    expect(logSpy.calledWith('sampleRUM', 'click', { source: 'sidekick', target: 'context-menu:import-projects' })).to.be.true;
   });
 
   it('handles error', async () => {

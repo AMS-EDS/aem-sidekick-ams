@@ -38,11 +38,10 @@ export function mockDiscoveryCall({
   multipleOriginalSites = false,
 } = {}) {
   fetchMock.restore();
-  fetchMock.get(`begin:https://admin.${process.env.HLX_PROD_SERVER_HOST_PAGE}/discover/`, (url) => {
+  fetchMock.get(`begin:https://api.${process.env.HLX_PROD_SERVER_HOST_LIVE}/discover`, (url) => {
     if (failDiscovery) {
       return new Response('', { status: 404 });
     }
-    // @ts-ignore
     const path = new URL(url).pathname;
     if (path.startsWith('/discover')) {
       if (emptyDiscovery) {
@@ -59,7 +58,6 @@ export function mockDiscoveryCall({
     if (failEditInfo) {
       return new Response('', { status: 404 });
     }
-    // @ts-ignore
     const path = new URL(url).pathname;
     if (path.startsWith('/_api/v2.0/shares/')) {
       if (failEditInfo) {

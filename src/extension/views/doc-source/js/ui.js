@@ -13,6 +13,7 @@
 import {
   blockDivToTable,
   blockTableToDiv,
+  sectionMetadataToTable,
   createSectionBreaks,
   removeSectionBreaks,
   addMetadataBlock,
@@ -74,10 +75,14 @@ const copyHTMLToClipboard = (html) => {
  */
 const htmlSourceToEdition = (main, head, url) => {
   main.querySelectorAll('img').forEach((img) => {
-    if (!img.src) return;
-    const content = new URL(url);
-    const pathname = content.pathname.replace(/\/$/, '');
-    img.src = `${content.origin}${pathname}${img.src.substring(img.src.lastIndexOf('/'))}`;
+    const originalSrc = img.getAttribute('src');
+    if (!originalSrc) {
+      return;
+    }
+
+    // convert image urls to absolute urls
+    const resolvedUrl = new URL(originalSrc, url);
+    img.src = resolvedUrl.href;
   });
 
   main.querySelectorAll('picture source').forEach((source) => {
@@ -85,6 +90,7 @@ const htmlSourceToEdition = (main, head, url) => {
   });
 
   blockDivToTable(main);
+  sectionMetadataToTable(main);
   createSectionBreaks(main);
   addMetadataBlock(main, head, url);
 };
@@ -185,12 +191,16 @@ const debounce = (func, wait, immed = false) => {
     const ctx = this;
     const later = () => {
       timeout = null;
-      if (!immed) func.apply(ctx, args);
+      if (!immed) {
+        func.apply(ctx, args);
+      }
     };
     const callNow = immed && !timeout;
     clearTimeout(timeout);
     timeout = setTimeout(later, wait);
-    if (callNow) func.apply(ctx, args);
+    if (callNow) {
+      func.apply(ctx, args);
+    }
   };
 };
 

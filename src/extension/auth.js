@@ -14,27 +14,36 @@
 
 import { log } from './log.js';
 import { getConfig, setConfig } from './config.js';
-import { ADMIN_ORIGIN } from './utils/admin.js';
+import { ADMIN_ORIGIN, ADMIN_ORIGIN_NEW } from './utils/admin.js';
 
 const { host: adminHost } = new URL(ADMIN_ORIGIN);
+const { host: newAdminHost } = new URL(ADMIN_ORIGIN_NEW);
+const TOOLS_AUTH_TOKEN_RULES = [
+  {
+    requestDomain: 'helix-json2html.adobeaem.workers.dev',
+    regexFilter: (owner, repo) => `/((config|api)/)?${owner}/${repo}/[^/?#]+(?:/.*)?(?:\\?.*)?$`,
+  },
+];
+
+const TOOLS_SITE_TOKEN_RULES = [
+  {
+    requestDomain: 'da-etc.adobeaem.workers.dev',
+    regexFilter: (owner, repo) => `\\?url=https%3A%2F%2F(?:[a-z0-9-]+--)?${repo}--${owner}\\.aem\\.(page|live|reviews)%2F`,
+  },
+];
 
 function getRandomId() {
   return Math.floor(Math.random() * 1000000);
 }
 
 /**
- * Sets the x-auth-token header for all requests to the Admin API if project config
- * has an auth token. Also sets the Access-Control-Allow-Origin header for
- * all requests from tools.aem.live and labs.aem.live.
+ * Sets the x-auth-token header for Admin API requests and auth token tool workers,
+ * the authorization header for site token tool workers, and the
+ * Access-Control-Allow-Origin header for all requests from tools.aem.live.
  * @returns {Promise<void>}
  */
 export async function configureAuthAndCorsHeaders() {
   try {
-    // remove session rules first
-    await chrome.declarativeNetRequest.updateSessionRules({
-      removeRuleIds: (await chrome.declarativeNetRequest.getSessionRules())
-        .map((rule) => rule.id),
-    });
     // find projects with auth tokens and add rules for each
     const projects = await getConfig('session', 'projects') || [];
     const addRulesPromises = projects.map(async ({
@@ -42,6 +51,7 @@ export async function configureAuthAndCorsHeaders() {
     }) => {
       const rules = [];
       if (authToken) {
+        // add rule for admin origin
         rules.push({
           id: getRandomId(),
           priority: 1,
@@ -57,6 +67,26 @@ export async function configureAuthAndCorsHeaders() {
             excludedInitiatorDomains: ['da.live'],
             regexFilter: `^https://${adminHost}/(config/${owner}\\.json|[a-z]+/${owner}/.*)`,
             requestDomains: [adminHost],
+            requestMethods: ['get', 'put', 'post', 'delete'],
+            resourceTypes: ['xmlhttprequest'],
+          },
+        });
+        // add rule for new admin origin
+        rules.push({
+          id: getRandomId(),
+          priority: 1,
+          action: {
+            type: 'modifyHeaders',
+            requestHeaders: [{
+              operation: 'set',
+              header: 'x-auth-token',
+              value: authToken,
+            }],
+          },
+          condition: {
+            excludedInitiatorDomains: ['da.live'],
+            regexFilter: `^https://${newAdminHost}/(${owner}/.*|profile\\?org\\=${owner}\\&)`,
+            requestDomains: [newAdminHost],
             requestMethods: ['get', 'put', 'post', 'delete'],
             resourceTypes: ['xmlhttprequest'],
           },
@@ -94,10 +124,73 @@ export async function configureAuthAndCorsHeaders() {
         }));
 
         rules.push(...corsRules);
+
+        const authToolsRules = TOOLS_AUTH_TOKEN_RULES.map((ruleConfig) => ({
+          id: getRandomId(),
+          priority: 1,
+          action: {
+            type: 'modifyHeaders',
+            requestHeaders: [{
+              operation: 'set',
+              header: 'x-auth-token',
+              value: authToken,
+            }],
+          },
+          condition: {
+            initiatorDomains: ['tools.aem.live'],
+            regexFilter: ruleConfig.regexFilter(owner, repo),
+            requestDomains: [ruleConfig.requestDomain],
+            requestMethods: ['get', 'put', 'post', 'delete'],
+            resourceTypes: ['xmlhttprequest'],
+          },
+        }));
+
+        rules.push(...authToolsRules);
       }
 
       if (siteToken) {
+        const siteTokenAction = {
+          type: 'modifyHeaders',
+          requestHeaders: [{
+            operation: 'set',
+            header: 'authorization',
+            value: `token ${siteToken}`,
+          }],
+        };
+        const siteTokenResourceTypes = [
+          'main_frame',
+          'sub_frame',
+          'script',
+          'stylesheet',
+          'image',
+          'xmlhttprequest',
+          'media',
+          'font',
+          'other',
+        ];
+        const siteTokenRequestMethods = ['get', 'post', 'head'];
         rules.push({
+          id: getRandomId(),
+          priority: 1,
+          action: siteTokenAction,
+          condition: {
+            regexFilter: `^https://[a-z0-9-]+--${repo}--${owner}\\.${process.env.HLX_DOMAIN_PREFIX}\\.(page|live|reviews)/`,
+            requestMethods: siteTokenRequestMethods,
+            resourceTypes: siteTokenResourceTypes,
+          },
+        });
+        rules.push({
+          id: getRandomId(),
+          priority: 1,
+          action: siteTokenAction,
+          condition: {
+            regexFilter: '^http://localhost:3000/',
+            requestMethods: siteTokenRequestMethods,
+            resourceTypes: siteTokenResourceTypes,
+          },
+        });
+
+        const siteToolsRules = TOOLS_SITE_TOKEN_RULES.map((ruleConfig) => ({
           id: getRandomId(),
           priority: 1,
           action: {
@@ -109,33 +202,27 @@ export async function configureAuthAndCorsHeaders() {
             }],
           },
           condition: {
-            regexFilter: `^(https://[a-z0-9-]+--${repo}--${owner}\\.${process.env.HLX_DOMAIN_PREFIX}\\.(page|live|reviews)/.*|http://localhost:3000/.*)`,
-            requestMethods: ['get', 'post'],
-            resourceTypes: [
-              'main_frame',
-              'sub_frame',
-              'script',
-              'stylesheet',
-              'image',
-              'xmlhttprequest',
-              'media',
-              'font',
-              'other',
-            ],
+            initiatorDomains: ['tools.aem.live'],
+            regexFilter: ruleConfig.regexFilter(owner, repo),
+            requestDomains: [ruleConfig.requestDomain],
+            requestMethods: ['get', 'head'],
+            resourceTypes: ['xmlhttprequest'],
           },
-        });
+        }));
+
+        rules.push(...siteToolsRules);
       }
 
       log.debug(`addAuthTokensHeaders: added rules for ${owner}`);
       return rules;
     });
 
+    // swap rules in a single atomic update so a request in flight never hits a
+    // window with no auth rule (which would 401 sub-requests and navigations)
+    const removeRuleIds = (await chrome.declarativeNetRequest.getSessionRules())
+      .map((rule) => rule.id);
     const addRules = (await Promise.all(addRulesPromises)).flat();
-    if (addRules.length > 0) {
-      await chrome.declarativeNetRequest.updateSessionRules({
-        addRules,
-      });
-    }
+    await chrome.declarativeNetRequest.updateSessionRules({ removeRuleIds, addRules });
   } catch (e) {
     log.error('addAuthTokensHeaders: unable to set auth token headers', e);
   }
@@ -236,8 +323,7 @@ export async function updateUserAgent() {
       }],
     },
     condition: {
-      regexFilter: `^https://${adminHost}/.*`,
-      requestDomains: [adminHost],
+      requestDomains: [adminHost, newAdminHost],
       requestMethods: ['get', 'put', 'post', 'delete'],
       resourceTypes: ['xmlhttprequest'],
     },

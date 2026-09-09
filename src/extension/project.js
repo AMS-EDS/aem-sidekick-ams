@@ -48,9 +48,9 @@ export async function getProject(project = {}) {
  * @returns {Promise<Object[]>} The project configurations
  */
 export async function getProjects() {
-  return Promise.all((await getConfig('sync', 'projects')
-    || await getConfig('sync', 'hlxSidekickProjects') || []) // legacy
-    .map((handle) => getProject(handle)));
+  const configs = await getConfig('sync', 'projects') || [];
+  const projects = await Promise.all(configs.map((handle) => getProject(handle)));
+  return projects.filter((project) => project !== undefined);
 }
 
 /**
@@ -89,7 +89,8 @@ export async function updateProject(project) {
  * @param {Object} config The project config
  * @returns {boolean} true if valid project config, else false
  */
-export function isValidProject({ owner, repo, ref } = {}) {
+export function isValidProject(config) {
+  const { owner, repo, ref } = config || {};
   return !!(owner && repo && ref);
 }
 
@@ -164,9 +165,8 @@ export async function getProjectFromUrl(tab) {
       return ghSettings;
     }
     try {
-      // check if hlx.page, hlx.live, aem.page, aem.live or aem.reviews url
+      // check if aem.page, aem.live or aem.reviews url
       const { host } = new URL(url);
-      // const res = /(.*--)?(.*)--(.*)--(.*)\.(aem|hlx)\.(page|live|reviews)/.exec(host);
       const res = new RegExp(`(.*--)?(.*)--(.*)--(.*)\\.(aem|hlx|${process.env.HLX_DOMAIN_PREFIX})\\.(page|live|reviews)`).exec(host);
       const [,, urlRef, urlRepo, urlOwner] = res || [];
       if (urlOwner && urlRepo && urlRef) {
@@ -230,19 +230,26 @@ export function assembleProject({
  * @param {Object} config The config
  * @param {string} config.owner The owner
  * @param {string} config.repo The repository
- * @param {string} [config.ref] The ref or branch (default: main)
- * @param {string} [config.authToken] The auth token
+ * @param {string} [config.ref=main] The ref or branch
+ * @param {boolean} [config.apiUpgrade=false] Is an API upgrade available for this site?
  * @returns {Promise<Object>} The project environment
  */
 export async function getProjectEnv({
   owner,
   repo,
   ref = 'main',
+  apiUpgrade = false,
 }) {
   const env = {};
   let res;
   try {
-    res = await callAdmin({ owner, repo, ref }, 'sidekick', '/config.json');
+    res = await callAdmin(
+      {
+        owner, repo, ref, apiUpgrade,
+      },
+      'sidekick',
+      apiUpgrade ? '' : '/config.json',
+    );
   } catch (e) {
     log.warn(`getProjectEnv: unable to retrieve project config: ${e}`);
   }
@@ -354,8 +361,7 @@ export async function deleteProject(project) {
     ({ owner, repo } = project);
     handle = `${owner}/${repo}`;
   }
-  const projects = await getConfig('sync', 'projects')
-    || await getConfig('sync', 'hlxSidekickProjects') || []; // legacy
+  const projects = await getConfig('sync', 'projects') || [];
   const i = projects.indexOf(handle);
   if (i >= 0) {
     // delete admin auth header rule
@@ -482,9 +488,7 @@ export async function getProjectMatches(configs, tab) {
   const {
     host: checkHost,
   } = new URL(tab.url);
-  // exclude disabled configs
   const matches = configs
-    .filter((cfg) => !cfg.disabled)
     .filter((cfg) => {
       const {
         owner,
@@ -542,84 +546,5 @@ export async function getProjectMatches(configs, tab) {
   }
   return matches
     // ensure each match has an id
-    .map((cfg) => (cfg.id ? cfg : { ...cfg, id: `${cfg.owner}/${cfg.repo}` }))
-    // exclude disabled configs
-    .filter(({ owner, repo }) => !configs
-      .find((cfg) => cfg.owner === owner && cfg.repo === repo && cfg.disabled));
-}
-
-/**
- * Looks for a legacy sidekick and returns its extension ID if found.
- * @returns {Promise<string>} The legacy sidekick ID
- */
-export async function detectLegacySidekick() {
-  const extensionIds = chrome.runtime.getManifest().externally_connectable?.ids || [];
-  return (await Promise.all(
-    extensionIds.map(
-      async (id) => new Promise((resolve) => {
-        try {
-          // @ts-ignore
-          chrome.runtime.lastError = null;
-          chrome.runtime.sendMessage(
-            id,
-            { action: 'ping' },
-            (pong) => {
-              if (chrome.runtime.lastError) {
-                resolve(null);
-              } else {
-                resolve(pong ? id : null);
-              }
-            },
-          );
-        } catch (e) {
-          resolve(null);
-        }
-      }),
-    ),
-  ))
-    .find((id) => id !== null);
-}
-
-/**
- * Imports projects from legacy sidekick.
- * @returns {Promise<number>} The number of imported projects
- */
-export async function importLegacyProjects(sidekickId) {
-  return new Promise((resolve) => {
-    let importedProjects = 0;
-    try {
-      // fetch projects from legacy sidekick
-      chrome.runtime.sendMessage(
-        sidekickId,
-        { action: 'getProjects' },
-        async (legacyProjects) => {
-          if (Array.isArray(legacyProjects)
-            && legacyProjects.length > 0
-            && !chrome.runtime.lastError) {
-            log.info(`Importing projects from legacy sidekick (${sidekickId})`);
-            for (const legacyProject of legacyProjects) {
-              /* eslint-disable no-await-in-loop */
-              const handle = `${legacyProject.owner}/${legacyProject.repo}`;
-              const existing = await getProject(handle);
-              if (!existing) {
-                await updateProject(legacyProject);
-                importedProjects += 1;
-                log.info(`imported project ${handle}`);
-              } else {
-                log.info(`skipping import of existing project ${handle}`);
-              }
-              /* eslint-enable no-await-in-loop */
-            }
-            log.info(`Imported ${importedProjects} projects from legacy sidekick (${sidekickId})`);
-            resolve(importedProjects);
-          } else {
-            resolve(importedProjects);
-          }
-        },
-      );
-    } catch (e) {
-      log.warn(`Error importing projects from legacy sidekick (${sidekickId})`, e);
-      resolve(importedProjects);
-    }
-  });
+    .map((cfg) => (cfg.id ? cfg : { ...cfg, id: `${cfg.owner}/${cfg.repo}` }));
 }

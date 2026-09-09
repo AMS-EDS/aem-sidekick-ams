@@ -56,7 +56,7 @@ const TEST_POPOVER_CONFIG = {
   title: 'Test Popover',
   isPopover: true,
   popoverRect: 'width: 100px; height: 100px;',
-  url: 'https://labs.aem.live/tools/snapshot-admin/palette.html?foo=bar&theme=dark',
+  url: 'https://tools.aem.live/tools/snapshot-admin/palette.html?foo=bar&theme=dark',
   passConfig: false,
   passReferrer: false,
   button: {
@@ -207,6 +207,20 @@ describe('Plugin', () => {
     overlayTrigger.firstElementChild.click();
   });
 
+  it('popover iframe has clipboard-write permission', async () => {
+    const plugin = new Plugin({ ...TEST_POPOVER_CONFIG }, appStore);
+
+    const container = document.createElement('div');
+    render(plugin.render(), container);
+
+    // Wait for next time to let lit process the update
+    await Promise.resolve();
+
+    const iframe = container.querySelector('iframe');
+    expect(iframe).to.exist;
+    expect(iframe.getAttribute('allow')).to.equal('clipboard-write *');
+  });
+
   it('popover plugin renders as menu item', async () => {
     appStore.location = new URL('https://www.example.com');
     appStore.theme = 'dark';
@@ -340,7 +354,6 @@ describe('Plugin', () => {
       pinned: false,
     }, appStore);
     const renderedPlugin = plugin.render();
-    // @ts-ignore
     expect(renderedPlugin).to.equal('');
   });
 
@@ -353,7 +366,6 @@ describe('Plugin', () => {
     parent.append(child);
 
     const renderedPlugin = parent.render();
-    // @ts-ignore
     expect(renderedPlugin).to.equal('');
   });
 

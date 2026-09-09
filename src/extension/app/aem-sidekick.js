@@ -14,7 +14,7 @@
 
 import { html, LitElement } from 'lit';
 import { provide } from '@lit/context';
-import { customElement } from 'lit/decorators.js';
+import { customElement, property } from 'lit/decorators.js';
 import { reaction } from 'mobx';
 import { style } from './aem-sidekick.css.js';
 import { AppStore, appStoreContext } from './store/app.js';
@@ -33,6 +33,14 @@ export class AEMSidekick extends LitElement {
   @provide({ context: appStoreContext })
   accessor appStore;
 
+  @property({
+    type: Boolean,
+    converter: {
+      fromAttribute: (value) => (value === 'true'),
+    },
+  })
+  accessor open = false;
+
   static get styles() {
     return [style];
   }
@@ -44,8 +52,35 @@ export class AEMSidekick extends LitElement {
     this.loadContext(config);
   }
 
+  #boundHandleKeyDown = (e) => {
+    this.#handleKeyDown(e);
+  };
+
+  #handleDocumentPointerDown = (e) => {
+    if (!e.composedPath().includes(this)) {
+      EventBus.instance.dispatchEvent(new CustomEvent(EVENTS.CLOSE_POPOVER));
+    }
+  };
+
+  async #handleKeyDown(e) {
+    // only handle Cmd/Ctrl+R if sidekick is open
+    if (!this.open || !(e.metaKey || e.ctrlKey) || e.key !== 'r') {
+      return;
+    }
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      await chrome.runtime.sendMessage({ action: 'bustCache' });
+    } finally {
+      this.appStore.reloadPage();
+    }
+  }
+
   async connectedCallback() {
     super.connectedCallback();
+
+    window.addEventListener('keydown', this.#boundHandleKeyDown, true);
+    document.addEventListener('pointerdown', this.#handleDocumentPointerDown, true);
 
     reaction(
       () => this.appStore.theme,
@@ -53,6 +88,12 @@ export class AEMSidekick extends LitElement {
         this.requestUpdate();
       },
     );
+  }
+
+  disconnectedCallback() {
+    window.removeEventListener('keydown', this.#boundHandleKeyDown, true);
+    document.removeEventListener('pointerdown', this.#handleDocumentPointerDown, true);
+    super.disconnectedCallback?.();
   }
 
   async loadContext(config) {
@@ -70,41 +111,45 @@ export class AEMSidekick extends LitElement {
     if (!onboarded) {
       this.appStore.showOnboarding();
     }
-    chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
-      if (msg.action === 'show_notification' && ALLOWED_EXTENSION_IDS.includes(sender.id)) {
+    chrome.runtime.onMessage.addListener(({ action, ...msg }, sender, sendResponse) => {
+      if (action === 'ping') {
+        sendResponse(true);
+        return false;
+      } else if (action === 'show_notification' && ALLOWED_EXTENSION_IDS.includes(sender.id)) {
         const { message, headline } = msg;
         this.appStore.showModal({
           type: MODALS.INFO,
           data: {
             headline,
             message,
-            confirmCallback: (response) => { sendResponse(response); },
+            confirmCallback: (response) => sendResponse(response),
           },
         });
-      } else if (msg.action === 'resize_palette') {
+        return true;
+      } else if (action === 'resize_palette') {
         const { id, rect } = msg;
         EventBus.instance.dispatchEvent(new CustomEvent(EVENTS.RESIZE_PALETTE, {
           detail: { id, styles: rectToStyles(rect) },
         }));
         sendResponse(true);
-      } else if (msg.action === 'resize_popover') {
+      } else if (action === 'resize_popover') {
         const { id, rect } = msg;
         EventBus.instance.dispatchEvent(new CustomEvent(EVENTS.RESIZE_POPOVER, {
           detail: { id, styles: rectToStyles(rect) },
         }));
         sendResponse(true);
-      } else if (msg.action === 'close_palette') {
+      } else if (action === 'close_palette') {
         EventBus.instance.dispatchEvent(new CustomEvent(EVENTS.CLOSE_PALETTE, {
           detail: { id: msg.id },
         }));
         sendResponse(true);
-      } else if (msg.action === 'close_popover') {
+      } else if (action === 'close_popover') {
         EventBus.instance.dispatchEvent(new CustomEvent(EVENTS.CLOSE_POPOVER, {
           detail: { id: msg.id },
         }));
         sendResponse(true);
       }
-      return true;
+      return false;
     });
   }
 

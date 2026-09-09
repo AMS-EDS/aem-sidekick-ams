@@ -54,6 +54,7 @@ import {
 import { KeyboardListener } from '../utils/keyboard.js';
 import { ModalContainer } from '../components/modal/modal-container.js';
 import { getConfig, setConfig } from '../../config.js';
+import { setAutoLogin, setAutoLoginAttempted } from '../../auto-login.js';
 
 /**
  * The sidekick configuration object type
@@ -355,16 +356,28 @@ export class AppStore {
           let processedUrl;
           if (url) {
             const target = new URL(url, `https://${innerHost}/`);
-            target.searchParams.set('theme', this.theme);
+            if (isPalette || isPopover) {
+              target.searchParams.set('theme', this.theme);
+            }
             if (passConfig) {
               target.searchParams.append('ref', this.siteStore.ref);
               target.searchParams.append('repo', this.siteStore.repo);
               target.searchParams.append('owner', this.siteStore.owner);
-              if (this.siteStore.host) target.searchParams.append('host', this.siteStore.host);
-              if (this.siteStore.previewHost) target.searchParams.append('previewHost', this.siteStore.previewHost);
-              if (this.siteStore.liveHost) target.searchParams.append('liveHost', this.siteStore.liveHost);
-              if (this.siteStore.reviewHost) target.searchParams.append('reviewHost', this.siteStore.reviewHost);
-              if (this.siteStore.project) target.searchParams.append('project', this.siteStore.project);
+              if (this.siteStore.host) {
+                target.searchParams.append('host', this.siteStore.host);
+              }
+              if (this.siteStore.previewHost) {
+                target.searchParams.append('previewHost', this.siteStore.previewHost);
+              }
+              if (this.siteStore.liveHost) {
+                target.searchParams.append('liveHost', this.siteStore.liveHost);
+              }
+              if (this.siteStore.reviewHost) {
+                target.searchParams.append('reviewHost', this.siteStore.reviewHost);
+              }
+              if (this.siteStore.project) {
+                target.searchParams.append('project', this.siteStore.project);
+              }
             }
             if (passReferrer) {
               target.searchParams.append('referrer', location.href);
@@ -543,7 +556,9 @@ export class AppStore {
   isEditor() {
     const { location } = this;
     const { host } = location;
-    if (this.isSharePointEditor(location) || this.isSharePointViewer(location)) {
+    if (this.isSharePointEditor(location)
+      || this.isSharePointViewer(location)
+      || this.isSharePointShareLink(location)) {
       return true;
     }
     if (host === 'docs.google.com') {
@@ -642,6 +657,17 @@ export class AppStore {
   }
 
   /**
+   * Recognizes a SharePoint share link URL (e.g. personalized share URLs).
+   * @param {URL} url The URL
+   * @returns {boolean} <code>true</code> if URL is a SharePoint share link, else <code>false</code>
+   */
+  isSharePointShareLink(url) {
+    return this.isSharePoint(url)
+      && /^\/:[\w]+:\//.test(url.pathname)
+      && !url.pathname.includes('/_layouts/15/');
+  }
+
+  /**
    * Recognizes a SharePoint viewer URL.
    * @param {URL} url The URL
    * @returns {boolean} <code>true</code> if URL is SharePoint viewer, else <code>false</code>
@@ -656,19 +682,38 @@ export class AppStore {
   }
 
   /**
+   * Checks if a content source URL is Document Authoring (DA).
+   * DA content source URLs start with a <code>markup:</code> prefix.
+   * @param {string} contentSourceUrl The content source URL string to check
+   * @returns {boolean} <code>true</code> if URL is DA, else <code>false</code>
+   */
+  isDA(contentSourceUrl) {
+    try {
+      const { hostname } = new URL(contentSourceUrl.substring(7));
+      return hostname.endsWith('.da.live');
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /**
    * Returns a label for the content source
    * @returns {string} The content source label
    */
   getContentSourceLabel() {
     const { contentSourceType, contentSourceEditLabel } = this.siteStore;
-    const { preview: { sourceLocation } = {} } = this.status;
+    const { preview: { sourceLocation = '' } = {} } = this.status;
 
-    if (sourceLocation?.startsWith('onedrive:')) {
+    if (sourceLocation.startsWith('onedrive:')) {
       return 'SharePoint';
-    } else if (sourceLocation?.startsWith('gdrive:')) {
+    } else if (sourceLocation.startsWith('gdrive:')) {
       return 'Google Drive';
-    } else if (sourceLocation?.startsWith('markup:')) {
-      return contentSourceEditLabel || 'BYOM';
+    } else if (sourceLocation.startsWith('markup:')) {
+      if (contentSourceEditLabel) {
+        return contentSourceEditLabel;
+      } else {
+        return this.isDA(sourceLocation) ? 'Document Authoring' : 'BYOM';
+      }
     } else if (contentSourceType === 'onedrive') {
       return 'SharePoint';
     } else if (contentSourceType === 'google') {
@@ -934,7 +979,7 @@ export class AppStore {
     this.setState(STATE.FETCHING_STATUS);
     const isDM = this.isEditor() || this.isAdmin();
     const editUrl = isDM ? this.location.href : (fetchEdit ? 'auto' : '');
-    const path = isDM ? '' : this.location.pathname;
+    const path = isDM ? '/' : this.location.pathname.replace(/\.html$/, '');
 
     status = await this.api.getStatus(path, editUrl);
 
@@ -978,24 +1023,14 @@ export class AppStore {
    * @returns {Promise<boolean>} True if the preview was updated successfully, false otherwise
    */
   async update(path) {
-    const { siteStore, status } = this;
+    const { status } = this;
     path = path || status.webPath;
 
     this.setState(
       path.startsWith('/.helix') ? STATE.CONFIG : STATE.PREVIEWING,
     );
 
-    // update preview
     const previewStatus = await this.api.updatePreview(path);
-    if (previewStatus) {
-      // If we are on preview, we need to bust the cache on the page to ensure the latest
-      // content is loaded.
-      if (this.isPreview()) {
-        const host = this.isDev() ? siteStore.devUrl.host : `https://${siteStore.innerHost}`;
-        await fetch(`${host}${path}`, { cache: 'reload', mode: 'no-cors' });
-      }
-    }
-
     return !!previewStatus;
   }
 
@@ -1011,26 +1046,35 @@ export class AppStore {
     }
 
     if (res) {
+      let targetEnv = 'preview';
       // special handling of config files
       if (this.status.webPath.startsWith('/.helix/')) {
         this.showToast({
           message: this.i18n('activate_success'),
           variant: 'positive',
         });
+        return;
       } else if (this.status.webPath.startsWith('/.snapshots/')) {
         // special handling of snapshot updates
         this.showToast({
           message: this.i18n('snapshot_update_success'),
           variant: 'positive',
         });
-        this.switchEnv('review', false, true);
+        targetEnv = 'review';
       } else {
         this.showToast({
           message: this.i18n('preview_success'),
           variant: 'positive',
         });
-        this.switchEnv('preview', false, true);
       }
+
+      // bust cache on target host
+      await chrome.runtime.sendMessage({
+        action: 'bustCache',
+        host: this.siteStore[ENVS[targetEnv]],
+      });
+
+      this.switchEnv(targetEnv, false);
     }
   }
 
@@ -1052,6 +1096,9 @@ export class AppStore {
 
     // delete preview
     const resp = await this.api.updatePreview(path, true);
+
+    // bust cache on current host
+    await chrome.runtime.sendMessage({ action: 'bustCache' });
 
     // also unpublish if published
     if (resp && status.live && status.live.lastModified) {
@@ -1081,6 +1128,12 @@ export class AppStore {
     // update live
     const resp = await this.api.updateLive(path);
 
+    // bust cache on prod or live host
+    await chrome.runtime.sendMessage({
+      action: 'bustCache',
+      host: this.siteStore.host || this.siteStore.liveHost,
+    });
+
     return !!resp;
   }
 
@@ -1102,6 +1155,13 @@ export class AppStore {
 
     // delete live
     const resp = await this.api.updateLive(path, true);
+
+    // bust cache on prod or live host
+    await chrome.runtime.sendMessage({
+      action: 'bustCache',
+      host: this.siteStore.host || this.siteStore.liveHost,
+    });
+
     return !!resp;
   }
 
@@ -1135,14 +1195,14 @@ export class AppStore {
         if (event.origin === `chrome-extension://${chrome.runtime.id}`) {
           const { data } = event;
           if (data.detail.event === 'hlx-close-view') {
-            // restore the pre element if it exists (JSON view)
+            // restore the pre element if it exists
             if (pre) {
               pre.style.display = 'block';
             }
             view.remove();
           }
           if (data.detail.event === 'hlx-login') {
-            this.login(!!data.detail.selectAccount);
+            this.login(data.detail.selectAccount === true);
           }
         }
       });
@@ -1152,7 +1212,6 @@ export class AppStore {
 
   /**
    * Shows the view.
-   * @private
    */
   async showView() {
     if (!this.isProject()) {
@@ -1166,6 +1225,7 @@ export class AppStore {
       },
     } = this;
     let view;
+    const { owner, repo } = this.siteStore;
     if (isErrorPage(location, document)) {
       // assert viewport meta tag
       if (!document.head.querySelector('meta[name="viewport"]')) {
@@ -1178,15 +1238,18 @@ export class AppStore {
       // 401
       if (document.querySelector('body > pre').textContent.trim() === '401 Unauthorized') {
         view = {
-          viewer: chrome.runtime.getURL(`views/login/login.html?status=401&auth=${auth}`),
+          viewer: chrome.runtime.getURL(`views/login/login.html?status=401&auth=${auth}&org=${owner}&site=${repo}`),
         };
       }
       // 403
       if (document.querySelector('body > pre').textContent.trim() === '403 Forbidden') {
         view = {
-          viewer: chrome.runtime.getURL('views/login/login.html?status=403'),
+          viewer: chrome.runtime.getURL(`views/login/login.html?status=403&org=${owner}&site=${repo}`),
         };
       }
+    } else {
+      // page loaded successfully, clear the one-shot guard
+      setAutoLoginAttempted(owner, repo, false);
     }
 
     const searchParams = new URLSearchParams(search);
@@ -1216,14 +1279,18 @@ export class AppStore {
       contentSourceUrl,
       contentSourceEditPattern,
     } = this.siteStore;
-    if (!contentSourceEditPattern || typeof contentSourceEditPattern !== 'string') return undefined;
+    if (!contentSourceEditPattern || typeof contentSourceEditPattern !== 'string') {
+      return undefined;
+    }
 
     let { webPath: pathname } = status || this.status;
     if (!pathname) {
       return undefined;
     }
 
-    if (pathname.endsWith('/')) pathname += 'index';
+    if (pathname.endsWith('/')) {
+      pathname += 'index';
+    }
 
     const url = contentSourceEditPattern
       .replace('{{contentSourceUrl}}', contentSourceUrl)
@@ -1239,25 +1306,10 @@ export class AppStore {
    * @param {string} targetEnv One of the following environments:
    *        edit, dev, preview, live or prod
    * @param {boolean} [open] true if environment should be opened in new tab
-   * @param {boolean} [cacheBust] true if cache busting should be applied
    * @param {boolean} [prodCheck] true if the prod site should be checked
    * @fires Sidekick#envswitched
    */
-  async switchEnv(targetEnv, open = false, cacheBust = false, prodCheck = false) {
-    const getCacheBuster = (url) => {
-      // Check if cache busting should be applied based on the environment and conditions.
-      // The logic prevents cache busting if:
-      // The target environment is 'prod' && the envUrl does not include any of the live
-      // domains & the sidekick is running in transient mode.
-      // const liveDomains = ['aem.live', 'hlx.live'];
-      const liveDomains = ['aem.live', 'hlx.live', process.env.HLX_PROD_SERVER_HOST_LIVE];
-      if (cacheBust
-        && !(targetEnv === 'prod' && !liveDomains.some((domain) => url.includes(domain)) && this.siteStore.transient)) {
-        return `?nocache=${Date.now()}`;
-      }
-      return '';
-    };
-
+  async switchEnv(targetEnv, open = false, prodCheck = false) {
     const getEditUrl = async () => {
       const isReview = this.isReview();
       if (isReview) {
@@ -1269,7 +1321,8 @@ export class AppStore {
       }
 
       let updatedStatus = await this.fetchStatus(false, true, isReview);
-      let editUrl = updatedStatus.edit?.url || this.getBYOMSourceUrl(updatedStatus);
+      // prefer configured contentSourceEditPattern URL; otherwise fall back to status edit URL.
+      let editUrl = this.getBYOMSourceUrl(updatedStatus) || updatedStatus.edit?.url;
 
       if (isReview) {
         // restore original pathname and state
@@ -1278,7 +1331,8 @@ export class AppStore {
         if (!editUrl) {
           // no snapshot source, fall back to original edit URL
           updatedStatus = await this.fetchStatus(false, true);
-          editUrl = updatedStatus.edit?.url || this.getBYOMSourceUrl(updatedStatus);
+          // prefer configured contentSourceEditPattern URL; otherwise fall back to status edit URL.
+          editUrl = this.getBYOMSourceUrl(updatedStatus) || updatedStatus.edit?.url;
         }
       }
 
@@ -1294,7 +1348,7 @@ export class AppStore {
       if (!this.isEditor()) {
         envUrl += `${location.search}${location.hash}`;
       }
-      return new URL(`${envUrl}${getCacheBuster(envUrl)}`);
+      return new URL(envUrl);
     };
 
     const hostType = ENVS[targetEnv];
@@ -1398,9 +1452,9 @@ export class AppStore {
 
   /**
    * Logs the user in.
-   * @param {boolean} selectAccount <code>true</code> to allow user to select account (optional)
+   * @param {boolean} [selectAccount] <code>true</code> to allow user to select account (optional)
    */
-  login(selectAccount) {
+  login(selectAccount = false) {
     this.setState(STATE.LOGGING_IN);
     const loginUrl = this.api.createUrl('login');
     loginUrl.searchParams.set('extensionId', window.chrome?.runtime?.id);
@@ -1456,6 +1510,8 @@ export class AppStore {
    * Logs the user out.
    */
   logout() {
+    // clear the auto-login preference to avoid a login loop
+    setAutoLogin(this.siteStore.owner, this.siteStore.repo, false);
     this.setState(STATE.LOGGING_OUT);
     const logoutUrl = this.api.createUrl('logout');
     logoutUrl.searchParams.set('extensionId', window.chrome?.runtime?.id);
@@ -1502,7 +1558,7 @@ export class AppStore {
       const { exp } = profile;
       if (now > exp * 1000) {
         // token is expired
-        this.login(true);
+        this.login();
         this.sidekick.addEventListener(EXTERNAL_EVENTS.STATUS_FETCHED, () => {
           resolve();
         }, { once: true });

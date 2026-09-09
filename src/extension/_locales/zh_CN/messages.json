@@ -1,4 +1,7 @@
 {
+  "AEM_BACKEND_CONFIG_NOT_SUPPORTED": {
+    "message": "此网站现已在配置服务中进行管理。"
+  },
   "AEM_BACKEND_DOC_IMAGE_TOO_BIG": {
     "message": "无法预览 $1：包含的图像大于 $2"
   },
@@ -20,14 +23,11 @@
   "AEM_BACKEND_JSON_INVALID": {
     "message": "无法预览 $2：无效的 JSON"
   },
-  "AEM_BACKEND_MP4_BIT_RATE_TOO_HIGH": {
-    "message": "无法预览 $1：MP4 比特率高于 300KB/s"
-  },
   "AEM_BACKEND_MP4_PARSING_FAILED": {
     "message": "无法预览 $1：无效的 MP4"
   },
-  "AEM_BACKEND_MP4_TOO_LONG": {
-    "message": "无法预览 $1：MP4 长度超过 2 分钟"
+  "AEM_BACKEND_MP4_TOO_BIG": {
+    "message": "无法预览 $1：MP4 大于 $2"
   },
   "AEM_BACKEND_NON_MATCHING_MEDIA": {
     "message": "无法预览 $1：预期为 $2，但实际为 $3"
@@ -64,6 +64,9 @@
   },
   "AEM_BACKEND_VALIDATION_FAILED": {
     "message": "无法预览 $1：$2"
+  },
+  "AEM_NOT_PRIMARY_CONTENT": {
+    "message": "内容更新仅限于主要网站。"
   },
   "activate": {
     "message": "激活"
@@ -200,6 +203,30 @@
   "code_state": {
     "message": "代码文件无可用操作"
   },
+  "column_name_href": {
+    "message": "href"
+  },
+  "column_name_hrefs": {
+    "message": "多个 href"
+  },
+  "column_name_link": {
+    "message": "链接"
+  },
+  "column_name_links": {
+    "message": "多个链接"
+  },
+  "column_name_path": {
+    "message": "路径"
+  },
+  "column_name_paths": {
+    "message": "多个路径"
+  },
+  "column_name_url": {
+    "message": "url"
+  },
+  "column_name_urls": {
+    "message": "多个 URL"
+  },
   "config_add_project_headline": {
     "message": "已添加项目"
   },
@@ -233,29 +260,14 @@
   "config_project_exists": {
     "message": "对该项目的配置已存在。"
   },
-  "config_project_import": {
-    "message": "从 AEM Sidekick v6 导入项目"
-  },
-  "config_project_import_headline": {
-    "message": "导入项目"
-  },
-  "config_project_import_sidekick_not_found": {
-    "message": "未找到旧版 Sidekick。如果扩展已安装但当前处于禁用状态，请启用后再试。"
-  },
-  "config_project_imported_multiple": {
-    "message": "已成功从 AEM Sidekick v6 导入 $1 个项目。"
-  },
-  "config_project_imported_none": {
-    "message": "在 AEM Sidekick v6 中未找到新项目。"
-  },
-  "config_project_imported_single": {
-    "message": "已成功从 AEM Sidekick v6 导入 1 个项目。"
-  },
   "config_project_manage": {
     "message": "管理项目"
   },
   "config_project_pick": {
     "message": "选择一个项目"
+  },
+  "config_project_pick_first": {
+    "message": "请先选取一个项目。"
   },
   "config_project_remove": {
     "message": "删除该项目"
@@ -283,6 +295,9 @@
   },
   "copy": {
     "message": "复制"
+  },
+  "copy_all_values": {
+    "message": "复制所有值"
   },
   "copy_live_url": {
     "message": "复制实时 URL"
@@ -360,7 +375,7 @@
     "message": "抱歉，请输入与显示内容完全一致的文字进行确认。"
   },
   "destructive_confirmation_prompt": {
-    "message": "输入 $1 来确认"
+    "message": "输入以下文本以确认："
   },
   "details": {
     "message": "详细信息"
@@ -370,6 +385,9 @@
   },
   "docs": {
     "message": "https://www.aem.live/docs/sidekick"
+  },
+  "drag_to_reposition": {
+    "message": "拖动以重新定位"
   },
   "edit": {
     "message": "编辑"
@@ -421,6 +439,9 @@
   },
   "error_preview": {
     "message": "预览生成失败。请稍后重试。"
+  },
+  "error_preview_4XX": {
+    "message": "预览生成失败。查看了解详细信息。"
   },
   "error_preview_config": {
     "message": "无法激活配置：$1"
@@ -496,6 +517,12 @@
   },
   "logging_out_state": {
     "message": "正在注销……"
+  },
+  "login_hint_401": {
+    "message": "使用 AEM Sidekick 登录"
+  },
+  "login_hint_403": {
+    "message": "使用 AEM Sidekick 切换到其他用户"
   },
   "login_required_state": {
     "message": "登录以继续"
@@ -652,6 +679,12 @@
   },
   "site_login_required": {
     "message": "请登录以继续。"
+  },
+  "site_login_hint": {
+    "message": "单击“登录”时按住 Alt (Option) 键可选择特定帐户。"
+  },
+  "site_login_auto": {
+    "message": "不再显示此对话框"
   },
   "site_protected": {
     "message": "此网站受保护"
