@@ -35,7 +35,7 @@ import { getLanguage } from '../../utils/i18n.js';
  * @typedef {import('@spectrum-web-components/dialog').DialogBase} DialogBase
  */
 
-const TOOLS_ORIGIN = 'https://tools.aem.live';
+const TOOLS_ORIGIN = `https://tools.${process.env.HLX_PROD_SERVER_HOST_LIVE}`;
 
 export class OnBoardingDialog extends ConnectedElement {
   /**

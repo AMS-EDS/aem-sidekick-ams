@@ -207,7 +207,7 @@ export class AdminClient {
 
     if (errorCode === 'AEM_BACKEND_CONFIG_NOT_SUPPORTED') {
       // add button to open configuration service
-      const configEditorUrl = `https://tools.aem.live/tools/simple-config-editor/index.html?org=${this.#siteStore.owner}&site=${this.#siteStore.repo}`;
+      const configEditorUrl = `https://tools.${process.env.HLX_PROD_SERVER_HOST_LIVE}/tools/simple-config-editor/index.html?org=${this.#siteStore.owner}&site=${this.#siteStore.repo}`;
       toast.actionLabel = this.#appStore.i18n('open');
       toast.actionCallback = () => {
         this.#appStore.openPage(configEditorUrl);

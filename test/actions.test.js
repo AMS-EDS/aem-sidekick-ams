@@ -111,7 +111,7 @@ describe('Test actions', () => {
 
     // without auth info
     getStub.resolves({});
-    resp = await externalActions.getAuthInfo({}, { tab: mockTab('https://tools.aem.live') });
+    resp = await externalActions.getAuthInfo({}, { tab: mockTab(`https://tools.${process.env.HLX_PROD_SERVER_HOST_LIVE}`) });
     expect(resp).to.deep.equal([]);
 
     // with auth info
@@ -136,10 +136,10 @@ describe('Test actions', () => {
     });
 
     // trusted actors
-    resp = await externalActions.getAuthInfo({}, { tab: mockTab('https://tools.aem.live/') });
+    resp = await externalActions.getAuthInfo({}, { tab: mockTab(`https://tools.${process.env.HLX_PROD_SERVER_HOST_LIVE}/`) });
     expect(resp).to.deep.equal(['foo']);
 
-    resp = await externalActions.getAuthInfo({}, { tab: mockTab('https://tools.aem.live/test') });
+    resp = await externalActions.getAuthInfo({}, { tab: mockTab(`https://tools.${process.env.HLX_PROD_SERVER_HOST_LIVE}/test`) });
     expect(resp).to.deep.equal(['foo']);
 
     resp = await externalActions.getAuthInfo({}, { tab: mockTab('https://feature--helix-tools-website--adobe.aem.page/feature') });
@@ -152,7 +152,7 @@ describe('Test actions', () => {
     resp = await externalActions.getAuthInfo({}, { tab: mockTab('https://main--site--owner.aem.live') });
     expect(resp).to.deep.equal([]);
 
-    resp = await externalActions.getAuthInfo({}, { tab: mockTab('https://tools.aem.live.evil.com') });
+    resp = await externalActions.getAuthInfo({}, { tab: mockTab(`https://tools.${process.env.HLX_PROD_SERVER_HOST_LIVE}.evil.com`) });
     expect(resp).to.deep.equal([]);
 
     resp = await externalActions.getAuthInfo({}, { tab: mockTab('https://main--helix-tools-website--adobe.aem.live.evil.com') });
@@ -187,7 +187,7 @@ describe('Test actions', () => {
 
     // without projects
     getStub.resolves({});
-    resp = await externalActions.getSites({}, { tab: mockTab('https://tools.aem.live') });
+    resp = await externalActions.getSites({}, { tab: mockTab(`https://tools.${process.env.HLX_PROD_SERVER_HOST_LIVE}`) });
     expect(resp).to.deep.equal([]);
 
     // with projects
@@ -201,7 +201,7 @@ describe('Test actions', () => {
     });
 
     // trusted actors
-    resp = await externalActions.getSites({}, { tab: mockTab('https://tools.aem.live/foo') });
+    resp = await externalActions.getSites({}, { tab: mockTab(`https://tools.${process.env.HLX_PROD_SERVER_HOST_LIVE}/foo`) });
     expect(resp).to.deep.equal(expectedOutput);
 
     resp = await externalActions.getSites({}, { tab: mockTab('https://feature--helix-tools-website--adobe.aem.page/feature') });
@@ -214,7 +214,7 @@ describe('Test actions', () => {
     resp = await externalActions.getSites({}, { tab: mockTab('https://main--site--owner.aem.live') });
     expect(resp).to.deep.equal([]);
 
-    resp = await externalActions.getSites({}, { tab: mockTab('https://tools.aem.live.evil.com') });
+    resp = await externalActions.getSites({}, { tab: mockTab(`https://tools.${process.env.HLX_PROD_SERVER_HOST_LIVE}.evil.com`) });
     expect(resp).to.deep.equal([]);
 
     resp = await externalActions.getSites({}, { tab: mockTab('https://main--helix-tools-website--adobe-evl.aem.live') });
@@ -249,7 +249,7 @@ describe('Test actions', () => {
     // trusted actor
     resp = await externalActions.addSite({
       config: addConfig,
-    }, { tab: mockTab('https://tools.aem.live/foo') });
+    }, { tab: mockTab(`https://tools.${process.env.HLX_PROD_SERVER_HOST_LIVE}/foo`) });
     expect(setStub.called).to.be.true;
     expect(setStub.calledWith({ projects: ['foo/bar'] })).to.be.true;
     expect(setStub.calledWithMatch({
@@ -262,7 +262,7 @@ describe('Test actions', () => {
     // trusted actor with org and site
     resp = await externalActions.addSite({
       config: { org: addConfig.owner, site: addConfig.repo },
-    }, { tab: mockTab('https://tools.aem.live/foo') });
+    }, { tab: mockTab(`https://tools.${process.env.HLX_PROD_SERVER_HOST_LIVE}/foo`) });
     expect(setStub.calledWith({ projects: ['foo/bar'] })).to.be.true;
     expect(resp).to.be.true;
 
@@ -271,7 +271,7 @@ describe('Test actions', () => {
       config: { org: 'foo', site: 'baz' },
       idp: 'microsoft',
       tenant: 'common',
-    }, { tab: mockTab('https://tools.aem.live/foo') });
+    }, { tab: mockTab(`https://tools.${process.env.HLX_PROD_SERVER_HOST_LIVE}/foo`) });
     expect(setStub.calledWith({ projects: ['foo/bar', 'foo/baz'] })).to.be.true;
     expect(resp).to.be.true;
 
@@ -280,7 +280,7 @@ describe('Test actions', () => {
     // trusted actor with missing owner and repo
     resp = await externalActions.addSite({
       config: { project: 'Foo Baz' },
-    }, { tab: mockTab('https://tools.aem.live/foo') });
+    }, { tab: mockTab(`https://tools.${process.env.HLX_PROD_SERVER_HOST_LIVE}/foo`) });
     expect(setStub.called).to.be.false;
     expect(resp).to.be.false;
 
@@ -310,7 +310,7 @@ describe('Test actions', () => {
     // trusted actor
     resp = await externalActions.updateSite({
       config: newConfig,
-    }, { tab: mockTab('https://tools.aem.live/foo') });
+    }, { tab: mockTab(`https://tools.${process.env.HLX_PROD_SERVER_HOST_LIVE}/foo`) });
     expect(setStub.calledWith({ 'foo/bar': newConfig })).to.be.true;
     expect(resp).to.be.true;
 
@@ -319,14 +319,14 @@ describe('Test actions', () => {
     // trusted actor with unknown site
     resp = await externalActions.updateSite({
       config: { owner: 'foo', repo: 'baz', project: 'Foo Baz' },
-    }, { tab: mockTab('https://tools.aem.live/foo') });
+    }, { tab: mockTab(`https://tools.${process.env.HLX_PROD_SERVER_HOST_LIVE}/foo`) });
     expect(setStub.called).to.be.false;
     expect(resp).to.be.false;
 
     // trusted actor with missing owner and repo
     resp = await externalActions.updateSite({
       config: { project: 'Foo Baz' },
-    }, { tab: mockTab('https://tools.aem.live/foo') });
+    }, { tab: mockTab(`https://tools.${process.env.HLX_PROD_SERVER_HOST_LIVE}/foo`) });
     expect(setStub.called).to.be.false;
     expect(resp).to.be.false;
 
@@ -360,7 +360,7 @@ describe('Test actions', () => {
     // trusted actor
     resp = await externalActions.removeSite({
       config: config1,
-    }, { tab: mockTab('https://tools.aem.live/foo') });
+    }, { tab: mockTab(`https://tools.${process.env.HLX_PROD_SERVER_HOST_LIVE}/foo`) });
     expect(removeStub.called).to.be.true;
     expect(setStub.calledWith({ projects: ['foo/baz'] })).to.be.true;
     expect(resp).to.be.true;
@@ -368,7 +368,7 @@ describe('Test actions', () => {
     // trusted actor with org and site
     resp = await externalActions.removeSite({
       config: config2,
-    }, { tab: mockTab('https://tools.aem.live/foo') });
+    }, { tab: mockTab(`https://tools.${process.env.HLX_PROD_SERVER_HOST_LIVE}/foo`) });
     expect(removeStub.called).to.be.true;
     expect(setStub.calledWith({ projects: [] })).to.be.true;
     expect(resp).to.be.true;
@@ -379,7 +379,7 @@ describe('Test actions', () => {
     // trusted actor with missing owner and repo
     resp = await externalActions.removeSite({
       config: { project: 'Foo Baz' },
-    }, { tab: mockTab('https://tools.aem.live/foo') });
+    }, { tab: mockTab(`https://tools.${process.env.HLX_PROD_SERVER_HOST_LIVE}/foo`) });
     expect(removeStub.called).to.be.false;
     expect(setStub.called).to.be.false;
     expect(resp).to.be.false;
@@ -428,7 +428,7 @@ describe('Test actions', () => {
     // trusted actor
     resp = await externalActions.login(
       { org: 'foo', site: 'bar' },
-      { tab: mockTab('https://tools.aem.live/tools/foo.html') },
+      { tab: mockTab(`https://tools.${process.env.HLX_PROD_SERVER_HOST_LIVE}/tools/foo.html`) },
     );
     expect(resp).to.be.true;
     expect(createTabStub.calledWith({
@@ -443,7 +443,7 @@ describe('Test actions', () => {
     // trusted actor with selectAccount parameter
     resp = await externalActions.login(
       { org: 'foo', site: 'bar', selectAccount: true },
-      { tab: mockTab('https://tools.aem.live/tools/foo.html') },
+      { tab: mockTab(`https://tools.${process.env.HLX_PROD_SERVER_HOST_LIVE}/tools/foo.html`) },
     );
     expect(resp).to.be.true;
     expect(createTabStub.calledWith({
@@ -455,7 +455,7 @@ describe('Test actions', () => {
     // trusted actor with idp parameter
     resp = await externalActions.login(
       { org: 'foo', site: 'bar', idp: 'microsoft' },
-      { tab: mockTab('https://tools.aem.live/tools/foo.html') },
+      { tab: mockTab(`https://tools.${process.env.HLX_PROD_SERVER_HOST_LIVE}/tools/foo.html`) },
     );
     expect(resp).to.be.true;
     expect(createTabStub.calledWith({
@@ -472,7 +472,7 @@ describe('Test actions', () => {
         idp: 'microsoft',
         tenant: 'common',
       },
-      { tab: mockTab('https://tools.aem.live/tools/foo.html') },
+      { tab: mockTab(`https://tools.${process.env.HLX_PROD_SERVER_HOST_LIVE}/tools/foo.html`) },
     );
     expect(resp).to.be.true;
     expect(createTabStub.calledWith({
@@ -484,7 +484,7 @@ describe('Test actions', () => {
     // trusted actor with unsupported idp
     resp = await externalActions.login(
       { org: 'foo', site: 'bar', idp: 'foo' },
-      { tab: mockTab('https://tools.aem.live/tools/foo.html') },
+      { tab: mockTab(`https://tools.${process.env.HLX_PROD_SERVER_HOST_LIVE}/tools/foo.html`) },
     );
     expect(resp).to.be.false;
     expect(createTabStub.calledWith({
@@ -496,14 +496,14 @@ describe('Test actions', () => {
     // missing mandatory parameters
     resp = await externalActions.login(
       {},
-      { tab: mockTab('https://tools.aem.live/tools/foo.html') },
+      { tab: mockTab(`https://tools.${process.env.HLX_PROD_SERVER_HOST_LIVE}/tools/foo.html`) },
     );
     expect(resp).to.be.false;
 
     // untrusted actors
     await externalActions.login(
       { org: 'foo', site: 'bar' },
-      { tab: mockTab('https://tools.aem.live.evil/tools/foo.html') },
+      { tab: mockTab(`https://tools.${process.env.HLX_PROD_SERVER_HOST_LIVE}.evil/tools/foo.html`) },
     );
     expect(resp).to.be.false;
 
@@ -517,7 +517,7 @@ describe('Test actions', () => {
     });
     resp = await externalActions.login(
       { org: 'foo', site: 'bar' },
-      { tab: mockTab('https://tools.aem.live/tools/foo.html') },
+      { tab: mockTab(`https://tools.${process.env.HLX_PROD_SERVER_HOST_LIVE}/tools/foo.html`) },
     );
     expect(resp).to.be.false;
   });
@@ -1052,7 +1052,7 @@ describe('Test actions', () => {
       id: 2,
     }));
     expect(createSpy.calledWithMatch({
-      url: 'https://tools.aem.live/tools/project-admin/index.html',
+      url: `https://tools.${process.env.HLX_PROD_SERVER_HOST_LIVE}/tools/project-admin/index.html`,
       openerTabId: 2,
       windowId: 0,
     })).to.be.true;

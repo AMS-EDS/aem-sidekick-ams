@@ -39,7 +39,7 @@ function getRandomId() {
 /**
  * Sets the x-auth-token header for Admin API requests and auth token tool workers,
  * the authorization header for site token tool workers, and the
- * Access-Control-Allow-Origin header for all requests from tools.aem.live.
+ * Access-Control-Allow-Origin header for all requests from the tools domain.
  * @returns {Promise<void>}
  */
 export async function configureAuthAndCorsHeaders() {
@@ -137,7 +137,7 @@ export async function configureAuthAndCorsHeaders() {
             }],
           },
           condition: {
-            initiatorDomains: ['tools.aem.live'],
+            initiatorDomains: [`tools.${process.env.HLX_PROD_SERVER_HOST_LIVE}`],
             regexFilter: ruleConfig.regexFilter(owner, repo),
             requestDomains: [ruleConfig.requestDomain],
             requestMethods: ['get', 'put', 'post', 'delete'],
@@ -202,7 +202,7 @@ export async function configureAuthAndCorsHeaders() {
             }],
           },
           condition: {
-            initiatorDomains: ['tools.aem.live'],
+            initiatorDomains: [`tools.${process.env.HLX_PROD_SERVER_HOST_LIVE}`],
             regexFilter: ruleConfig.regexFilter(owner, repo),
             requestDomains: [ruleConfig.requestDomain],
             requestMethods: ['get', 'head'],

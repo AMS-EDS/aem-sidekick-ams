@@ -632,7 +632,7 @@ describe('Test Admin Client', () => {
       // Verify the button opens the correct URL
       toast.actionCallback();
       expect(openPageStub.calledOnce).to.be.true;
-      expect(openPageStub.getCall(0).args[0]).to.equal('https://tools.aem.live/tools/simple-config-editor/index.html?org=adobe&site=aem-boilerplate');
+      expect(openPageStub.getCall(0).args[0]).to.equal(`https://tools.${process.env.HLX_PROD_SERVER_HOST_LIVE}/tools/simple-config-editor/index.html?org=adobe&site=aem-boilerplate`);
     });
 
     it('should return localized error with details', () => {

@@ -56,7 +56,7 @@ const TEST_POPOVER_CONFIG = {
   title: 'Test Popover',
   isPopover: true,
   popoverRect: 'width: 100px; height: 100px;',
-  url: 'https://tools.aem.live/tools/snapshot-admin/palette.html?foo=bar&theme=dark',
+  url: `https://tools.${process.env.HLX_PROD_SERVER_HOST_LIVE}/tools/snapshot-admin/palette.html?foo=bar&theme=dark`,
   passConfig: false,
   passReferrer: false,
   button: {

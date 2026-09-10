@@ -139,7 +139,7 @@ function isTrustedOrigin(origin) {
   const TRUSTED_ORIGINS = [
     ADMIN_ORIGIN,
     ADMIN_ORIGIN_NEW,
-    'https://tools.aem.live',
+    `https://tools.${process.env.HLX_PROD_SERVER_HOST_LIVE}`,
     'http://localhost:3000',
   ];
 
@@ -482,7 +482,7 @@ async function enableDisableProject(tab) {
  */
 async function manageProjects(tab) {
   await chrome.tabs.create({
-    url: 'https://tools.aem.live/tools/project-admin/index.html',
+    url: `https://tools.${process.env.HLX_PROD_SERVER_HOST_LIVE}/tools/project-admin/index.html`,
     openerTabId: tab.id,
     windowId: tab.windowId,
   });

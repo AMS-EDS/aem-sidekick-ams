@@ -756,7 +756,7 @@ export class SidekickTest {
   mockFetchOnboardingSuccess(
     overrides = {},
   ) {
-    fetchMock.get('https://tools.aem.live/sidekick/query-index.json', {
+    fetchMock.get(`https://tools.${process.env.HLX_PROD_SERVER_HOST_LIVE}/sidekick/query-index.json`, {
       status: 200,
       body: {
         ...defaultOnboardingResponse,
@@ -764,7 +764,7 @@ export class SidekickTest {
       },
     }, { overwriteRoutes: true });
 
-    fetchMock.get('glob:https://tools.aem.live/sidekick/onboarding/en/**.plain.html', {
+    fetchMock.get(`glob:https://tools.${process.env.HLX_PROD_SERVER_HOST_LIVE}/sidekick/onboarding/en/**.plain.html`, {
       status: 200,
       body: onboardingHtml(),
     }, { overwriteRoutes: true });
@@ -780,7 +780,7 @@ export class SidekickTest {
   mockFetchOnboardingFailure(
     overrides = {},
   ) {
-    fetchMock.get('https://tools.aem.live/sidekick/query-index.json', {
+    fetchMock.get(`https://tools.${process.env.HLX_PROD_SERVER_HOST_LIVE}/sidekick/query-index.json`, {
       status: 500,
       body: {
         ...defaultOnboardingResponse,
