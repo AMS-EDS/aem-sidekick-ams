@@ -99,19 +99,19 @@ describe('browser utils', () => {
     });
 
     it('returns true for matching hosts in preview mode', () => {
-      expect(matchProjectHost('main--repo--owner.aem.page', 'main--repo--owner.aem.page')).to.eq(true);
+      expect(matchProjectHost(`main--repo--owner.${process.env.HLX_PROD_SERVER_HOST_PAGE}`, `main--repo--owner.${process.env.HLX_PROD_SERVER_HOST_PAGE}`)).to.eq(true);
     });
 
     it('returns true for matching hosts in live mode', () => {
-      expect(matchProjectHost('main--repo--owner.aem.live', 'main--repo--owner.aem.live')).to.eq(true);
+      expect(matchProjectHost(`main--repo--owner.${process.env.HLX_PROD_SERVER_HOST_LIVE}`, `main--repo--owner.${process.env.HLX_PROD_SERVER_HOST_LIVE}`)).to.eq(true);
     });
 
     it('returns false for hosts with different project details but same suffix', () => {
-      expect(matchProjectHost('main--repo1--owner.aem.page', 'main--repo2--owner.aem.page')).to.eq(false);
+      expect(matchProjectHost(`main--repo1--owner.${process.env.HLX_PROD_SERVER_HOST_PAGE}`, `main--repo2--owner.${process.env.HLX_PROD_SERVER_HOST_PAGE}`)).to.eq(false);
     });
 
     it('returns false for hosts with same project details but different suffixes', () => {
-      expect(matchProjectHost('main--repo--owner.aem.page', 'main--repo--owner.aem.live')).to.eq(false);
+      expect(matchProjectHost(`main--repo--owner.${process.env.HLX_PROD_SERVER_HOST_PAGE}`, `main--repo--owner.${process.env.HLX_PROD_SERVER_HOST_LIVE}`)).to.eq(false);
     });
 
     it('returns false for invalid host formats', () => {

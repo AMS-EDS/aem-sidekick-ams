@@ -584,7 +584,7 @@ describe('Test Bulk Store', () => {
       it('shows toast on 401 response', async () => {
         startJobStub.restore();
         fetchMock.post(
-          'https://admin.hlx.page/preview/adobe/aem-boilerplate/main/*',
+          `https://admin.${process.env.HLX_PROD_SERVER_HOST_PAGE}/preview/adobe/aem-boilerplate/main/*`,
           { status: 401, body: {} },
           { overwriteRoutes: true },
         );
@@ -606,7 +606,7 @@ describe('Test Bulk Store', () => {
       it('shows toast on 403 response', async () => {
         startJobStub.restore();
         fetchMock.post(
-          'https://admin.hlx.page/preview/adobe/aem-boilerplate/main/*',
+          `https://admin.${process.env.HLX_PROD_SERVER_HOST_PAGE}/preview/adobe/aem-boilerplate/main/*`,
           { status: 403, body: {} },
           { overwriteRoutes: true },
         );
@@ -920,7 +920,7 @@ describe('Test Bulk Store', () => {
       it('shows toast on 401 response', async () => {
         startJobStub.restore();
         fetchMock.post(
-          'https://admin.hlx.page/live/adobe/aem-boilerplate/main/*',
+          `https://admin.${process.env.HLX_PROD_SERVER_HOST_PAGE}/live/adobe/aem-boilerplate/main/*`,
           { status: 401, body: {} },
           { overwriteRoutes: true },
         );
@@ -1055,7 +1055,7 @@ describe('Test Bulk Store', () => {
     });
 
     describe('copyUrls', () => {
-      const host = 'main--aem-boilerplate--adobe.aem.page';
+      const host = `main--aem-boilerplate--adobe.${process.env.HLX_PROD_SERVER_HOST_PAGE}`;
 
       it('handles emtpy selection', async () => {
         const debugStub = sidekickTest.sandbox.stub(log, 'debug');

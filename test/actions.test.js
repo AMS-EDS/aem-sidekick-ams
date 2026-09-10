@@ -142,20 +142,20 @@ describe('Test actions', () => {
     resp = await externalActions.getAuthInfo({}, { tab: mockTab(`https://tools.${process.env.HLX_PROD_SERVER_HOST_LIVE}/test`) });
     expect(resp).to.deep.equal(['foo']);
 
-    resp = await externalActions.getAuthInfo({}, { tab: mockTab('https://feature--helix-tools-website--adobe.aem.page/feature') });
+    resp = await externalActions.getAuthInfo({}, { tab: mockTab(`https://feature--helix-tools-website--${process.env.GITHUB_ORG}.${process.env.HLX_PROD_SERVER_HOST_PAGE}/feature`) });
     expect(resp).to.deep.equal(['foo']);
 
     // untrusted actors
     resp = await externalActions.getAuthInfo({}, { tab: mockTab('https://evil.live') });
     expect(resp).to.deep.equal([]);
 
-    resp = await externalActions.getAuthInfo({}, { tab: mockTab('https://main--site--owner.aem.live') });
+    resp = await externalActions.getAuthInfo({}, { tab: mockTab(`https://main--site--owner.${process.env.HLX_PROD_SERVER_HOST_LIVE}`) });
     expect(resp).to.deep.equal([]);
 
     resp = await externalActions.getAuthInfo({}, { tab: mockTab(`https://tools.${process.env.HLX_PROD_SERVER_HOST_LIVE}.evil.com`) });
     expect(resp).to.deep.equal([]);
 
-    resp = await externalActions.getAuthInfo({}, { tab: mockTab('https://main--helix-tools-website--adobe.aem.live.evil.com') });
+    resp = await externalActions.getAuthInfo({}, { tab: mockTab(`https://main--helix-tools-website--${process.env.GITHUB_ORG}.${process.env.HLX_PROD_SERVER_HOST_LIVE}.evil.com`) });
     expect(resp).to.deep.equal([]);
   });
 
@@ -204,20 +204,20 @@ describe('Test actions', () => {
     resp = await externalActions.getSites({}, { tab: mockTab(`https://tools.${process.env.HLX_PROD_SERVER_HOST_LIVE}/foo`) });
     expect(resp).to.deep.equal(expectedOutput);
 
-    resp = await externalActions.getSites({}, { tab: mockTab('https://feature--helix-tools-website--adobe.aem.page/feature') });
+    resp = await externalActions.getSites({}, { tab: mockTab(`https://feature--helix-tools-website--${process.env.GITHUB_ORG}.${process.env.HLX_PROD_SERVER_HOST_PAGE}/feature`) });
     expect(resp).to.deep.equal(expectedOutput);
 
     // untrusted actors
     resp = await externalActions.getSites({}, { tab: mockTab('https://evil.live') });
     expect(resp).to.deep.equal([]);
 
-    resp = await externalActions.getSites({}, { tab: mockTab('https://main--site--owner.aem.live') });
+    resp = await externalActions.getSites({}, { tab: mockTab(`https://main--site--owner.${process.env.HLX_PROD_SERVER_HOST_LIVE}`) });
     expect(resp).to.deep.equal([]);
 
     resp = await externalActions.getSites({}, { tab: mockTab(`https://tools.${process.env.HLX_PROD_SERVER_HOST_LIVE}.evil.com`) });
     expect(resp).to.deep.equal([]);
 
-    resp = await externalActions.getSites({}, { tab: mockTab('https://main--helix-tools-website--adobe-evl.aem.live') });
+    resp = await externalActions.getSites({}, { tab: mockTab(`https://main--helix-tools-website--${process.env.GITHUB_ORG}-evl.${process.env.HLX_PROD_SERVER_HOST_LIVE}`) });
     expect(resp).to.deep.equal([]);
   });
 

@@ -201,10 +201,10 @@ describe('Test App Store', () => {
     appStore.location.host = `main--aem-boilerplate--adobe.${process.env.HLX_PROD_SERVER_HOST_LIVE}`;
     expect(appStore.isPreview()).to.be.false;
 
-    appStore.location.host = 'main--aem-boilerplate--adobe.aem.page';
+    appStore.location.host = `main--aem-boilerplate--adobe.${process.env.HLX_PROD_SERVER_HOST_PAGE}`;
     expect(appStore.isPreview()).to.be.true;
 
-    appStore.location.host = 'main--aem-boilerplate--adobe.aem.live';
+    appStore.location.host = `main--aem-boilerplate--adobe.${process.env.HLX_PROD_SERVER_HOST_LIVE}`;
     expect(appStore.isPreview()).to.be.false;
 
     appStore.location.host = 'foobar.com';
@@ -215,13 +215,13 @@ describe('Test App Store', () => {
     await appStore.loadContext(sidekickElement, defaultSidekickConfig);
     appStore.location.port = '';
 
-    appStore.location.host = 'main--aem-boilerplate--adobe.aem.reviews';
+    appStore.location.host = `main--aem-boilerplate--adobe.${process.env.HLX_PROD_SERVER_HOST_REVIEW}`;
     expect(appStore.isReview()).to.be.true;
 
-    appStore.location.host = 'main--aem-boilerplate--adobe.aem.page';
+    appStore.location.host = `main--aem-boilerplate--adobe.${process.env.HLX_PROD_SERVER_HOST_PAGE}`;
     expect(appStore.isReview()).to.be.false;
 
-    appStore.location.host = 'main--aem-boilerplate--adobe.aem.live';
+    appStore.location.host = `main--aem-boilerplate--adobe.${process.env.HLX_PROD_SERVER_HOST_LIVE}`;
     expect(appStore.isReview()).to.be.false;
 
     appStore.location.host = 'foobar.com';
@@ -240,7 +240,7 @@ describe('Test App Store', () => {
     appStore.location.host = 'aem-boilerplate.com';
     expect(appStore.isProd()).to.be.true;
 
-    appStore.location.host = 'main--aem-boilerplate--adobe.aem.live';
+    appStore.location.host = `main--aem-boilerplate--adobe.${process.env.HLX_PROD_SERVER_HOST_LIVE}`;
     expect(appStore.isProd()).to.be.false;
   });
 
@@ -248,7 +248,7 @@ describe('Test App Store', () => {
     await appStore.loadContext(sidekickElement, defaultSidekickConfig);
     appStore.location.port = '';
 
-    appStore.location.host = 'main--aem-boilerplate--adobe.aem.live';
+    appStore.location.host = `main--aem-boilerplate--adobe.${process.env.HLX_PROD_SERVER_HOST_LIVE}`;
     expect(appStore.isAdmin()).to.be.false;
 
     appStore.location.host = 'drive.google.com';
@@ -273,10 +273,10 @@ describe('Test App Store', () => {
     expect(appStore.isProject()).to.be.true;
 
     appStore.location.port = '';
-    appStore.location.host = 'main--aem-boilerplate--adobe.aem.live';
+    appStore.location.host = `main--aem-boilerplate--adobe.${process.env.HLX_PROD_SERVER_HOST_LIVE}`;
     expect(appStore.isProject()).to.be.true;
 
-    appStore.location.host = 'main--aem-boilerplate--adobe.aem.page';
+    appStore.location.host = `main--aem-boilerplate--adobe.${process.env.HLX_PROD_SERVER_HOST_PAGE}`;
     expect(appStore.isProject()).to.be.true;
 
     appStore.location.host = 'aem-boilerplate.com';
@@ -793,7 +793,7 @@ describe('Test App Store', () => {
 
       isReviewStub.returns(true);
       instance.siteStore.stdReviewHost = 'aem.reviews';
-      instance.location = new URL('https://test-snapshot--aem-boilerplate--adobe.aem.reviews/path');
+      instance.location = new URL(`https://test-snapshot--aem-boilerplate--adobe.${process.env.HLX_PROD_SERVER_HOST_REVIEW}/path`);
       instance.status = { webPath: '/.snapshots/test-snapshot/path' };
 
       // Mock the first fetchStatus call with snapshot path
@@ -813,7 +813,7 @@ describe('Test App Store', () => {
 
       isReviewStub.returns(true);
       instance.siteStore.stdReviewHost = 'aem.reviews';
-      instance.location = new URL('https://test-snapshot--aem-boilerplate--adobe.aem.reviews/path');
+      instance.location = new URL(`https://test-snapshot--aem-boilerplate--adobe.${process.env.HLX_PROD_SERVER_HOST_REVIEW}/path`);
       instance.status = { webPath: '/.snapshots/test-snapshot/path' };
 
       // Mock the first fetchStatus call with no edit URL
@@ -1712,7 +1712,7 @@ describe('Test App Store', () => {
     it('loads login view on 401 site response', async () => {
       sidekickTest.mockFetchSidekickConfigSuccess(true, false);
       isProjectStub.returns(true);
-      instance.location = new URL('https://main--aem-boilerplate--adobe.aem.page/protected');
+      instance.location = new URL(`https://main--aem-boilerplate--adobe.${process.env.HLX_PROD_SERVER_HOST_PAGE}/protected`);
       getViewOverlayStub.onCall(0).returns(undefined);
 
       const sidekick = new AEMSidekick(defaultSidekickConfig);
@@ -1728,14 +1728,14 @@ describe('Test App Store', () => {
 
       const frameUrl = new URL(frame.src);
       expect(frameUrl.pathname.endsWith('/views/login/login.html')).to.be.true;
-      expect(frameUrl.searchParams.get('url')).to.equal('https://main--aem-boilerplate--adobe.aem.page/protected');
+      expect(frameUrl.searchParams.get('url')).to.equal(`https://main--aem-boilerplate--adobe.${process.env.HLX_PROD_SERVER_HOST_PAGE}/protected`);
       expect(frameUrl.searchParams.get('status')).to.equal('401');
     });
 
     it('loads login view on 403 site response', async () => {
       sidekickTest.mockFetchSidekickConfigSuccess(true, false);
       isProjectStub.returns(true);
-      instance.location = new URL('https://main--aem-boilerplate--adobe.aem.page/protected');
+      instance.location = new URL(`https://main--aem-boilerplate--adobe.${process.env.HLX_PROD_SERVER_HOST_PAGE}/protected`);
       getViewOverlayStub.onCall(0).returns(undefined);
 
       const sidekick = new AEMSidekick(defaultSidekickConfig);
@@ -1752,13 +1752,13 @@ describe('Test App Store', () => {
 
       const frameUrl = new URL(frame.src);
       expect(frameUrl.pathname.endsWith('/views/login/login.html')).to.be.true;
-      expect(frameUrl.searchParams.get('url')).to.equal('https://main--aem-boilerplate--adobe.aem.page/protected');
+      expect(frameUrl.searchParams.get('url')).to.equal(`https://main--aem-boilerplate--adobe.${process.env.HLX_PROD_SERVER_HOST_PAGE}/protected`);
       expect(frameUrl.searchParams.get('status')).to.equal('403');
     });
 
     it('clears the auto-login attempt when the delivery page loads successfully', async () => {
       isProjectStub.returns(true);
-      instance.location = new URL('https://main--aem-boilerplate--adobe.aem.page/');
+      instance.location = new URL(`https://main--aem-boilerplate--adobe.${process.env.HLX_PROD_SERVER_HOST_PAGE}/`);
       instance.siteStore.owner = 'adobe';
       instance.siteStore.repo = 'aem-boilerplate';
       sinon.stub(instance, 'findViews').returns([]);
