@@ -75,7 +75,7 @@ function createExpectedSiteToolsRules(siteToken, owner = 'test', repo = 'site') 
     },
     condition: {
       initiatorDomains: [`tools.${process.env.HLX_PROD_SERVER_HOST_LIVE}`],
-      regexFilter: `\\?url=https%3A%2F%2F(?:[a-z0-9-]+--)?${repo}--${owner}\\.aem\\.(page|live|reviews)%2F`,
+      regexFilter: `\\?url=https%3A%2F%2F(?:[a-z0-9-]+--)?${repo}--${owner}\\.${process.env.HLX_DOMAIN_PREFIX}\\.(page|live|reviews)%2F`,
       requestDomains: ['da-etc.adobeaem.workers.dev'],
       requestMethods: [
         'get',

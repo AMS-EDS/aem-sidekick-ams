@@ -28,7 +28,7 @@ const TOOLS_AUTH_TOKEN_RULES = [
 const TOOLS_SITE_TOKEN_RULES = [
   {
     requestDomain: 'da-etc.adobeaem.workers.dev',
-    regexFilter: (owner, repo) => `\\?url=https%3A%2F%2F(?:[a-z0-9-]+--)?${repo}--${owner}\\.aem\\.(page|live|reviews)%2F`,
+    regexFilter: (owner, repo) => `\\?url=https%3A%2F%2F(?:[a-z0-9-]+--)?${repo}--${owner}\\.${process.env.HLX_DOMAIN_PREFIX}\\.(page|live|reviews)%2F`,
   },
 ];
 
