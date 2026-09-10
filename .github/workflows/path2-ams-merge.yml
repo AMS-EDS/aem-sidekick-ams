@@ -85,9 +85,11 @@ jobs:
       - name: Create GitHub Issue for Patch Drift
         id: patch_drift_create_issue
         if: steps.patch_drift_check.outputs.has_drift == 'true' && steps.patch_drift_issue_check.outputs.drift_issue_exists == 'false'
+        env:
+          DRIFT_REPORT: ${{ steps.patch_drift_check.outputs.drift_report }}
         run: |
           BODY=$(jq -n \
-            --arg report "${{ steps.patch_drift_check.outputs.drift_report }}" \
+            --arg report "$DRIFT_REPORT" \
             --arg run "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
             '"## Patch Version Drift Detected\n\nOne or more files in `patches/` no longer match the version currently pinned in `package.json`.\n\n" + $report + "\n\n**Action:** confirm whether the patch still applies cleanly at the new version (`npx patch-package <pkg>`), then rename/regenerate as needed.\n\n**Detected in run:** " + $run')
           curl -s -X POST \
@@ -279,9 +281,11 @@ jobs:
       - name: Create GitHub Issue for Templatization Candidates
         id: templatization_create_issue
         if: steps.templatization_scan.outputs.has_candidates == 'true' && steps.templatization_issue_check.outputs.candidate_issue_exists == 'false'
+        env:
+          FINDINGS: ${{ steps.templatization_scan.outputs.findings }}
         run: |
           BODY=$(jq -n \
-            --arg findings "${{ steps.templatization_scan.outputs.findings }}" \
+            --arg findings "$FINDINGS" \
             --arg sha "${{ steps.merge_step.outputs.synced_sha }}" \
             --arg run "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
             '"## Possible Env-Templatization Candidates\n\nThe merge from `main` brought in `src/` file changes that match a hardcoded `.hlx.*`/`.aem.*` domain pattern (see `docs/domain-injection.md` for the convention).\n\n" + $findings + "\n\n**Action:** review whether these need to become `process.env.HLX_PROD_SERVER_HOST_PAGE` / `HLX_PROD_SERVER_HOST_LIVE` / `HLX_DOMAIN_PREFIX` references instead, same as the rest of the codebase. Some hardcoded domains are intentional (e.g. `tools.aem.live`, a shared commercial-only Adobe site, not customer-specific) -- use judgment, this is notify-only.\n\n**Synced to:** `" + $sha + "`\n**Detected in run:** " + $run')
