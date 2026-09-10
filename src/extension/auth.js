@@ -117,7 +117,7 @@ export async function configureAuthAndCorsHeaders() {
           },
           condition: {
             regexFilter,
-            initiatorDomains: [`tools.${process.env.HLX_PROD_SERVER_HOST_LIVE}`, `labs.${process.env.HLX_PROD_SERVER_HOST_LIVE}`],
+            initiatorDomains: [`tools.${process.env.HLX_PROD_SERVER_HOST_LIVE}`],
             requestMethods: ['get'],
             resourceTypes: ['xmlhttprequest'],
           },

@@ -225,7 +225,6 @@ describe('Test auth', () => {
             regexFilter: `^https://[0-9a-z-]+--[0-9a-z-]+--test\\.${process.env.HLX_DOMAIN_PREFIX}\\.(page|live|reviews)/.*`,
             initiatorDomains: [
               `tools.${process.env.HLX_PROD_SERVER_HOST_LIVE}`,
-              `labs.${process.env.HLX_PROD_SERVER_HOST_LIVE}`,
             ],
             requestMethods: [
               'get',
@@ -341,7 +340,6 @@ describe('Test auth', () => {
             regexFilter: `^https://[0-9a-z-]+--[0-9a-z-]+--test\\.${process.env.HLX_DOMAIN_PREFIX}\\.(page|live|reviews)/.*`,
             initiatorDomains: [
               `tools.${process.env.HLX_PROD_SERVER_HOST_LIVE}`,
-              `labs.${process.env.HLX_PROD_SERVER_HOST_LIVE}`,
             ],
             requestMethods: [
               'get',
@@ -368,7 +366,6 @@ describe('Test auth', () => {
             regexFilter: '^https://production-host.com/.*',
             initiatorDomains: [
               `tools.${process.env.HLX_PROD_SERVER_HOST_LIVE}`,
-              `labs.${process.env.HLX_PROD_SERVER_HOST_LIVE}`,
             ],
             requestMethods: [
               'get',
@@ -395,7 +392,6 @@ describe('Test auth', () => {
             regexFilter: '^https://custom-preview.com/.*',
             initiatorDomains: [
               `tools.${process.env.HLX_PROD_SERVER_HOST_LIVE}`,
-              `labs.${process.env.HLX_PROD_SERVER_HOST_LIVE}`,
             ],
             requestMethods: [
               'get',
@@ -422,7 +418,6 @@ describe('Test auth', () => {
             regexFilter: '^https://custom-live.com/.*',
             initiatorDomains: [
               `tools.${process.env.HLX_PROD_SERVER_HOST_LIVE}`,
-              `labs.${process.env.HLX_PROD_SERVER_HOST_LIVE}`,
             ],
             requestMethods: [
               'get',
@@ -532,7 +527,6 @@ describe('Test auth', () => {
             regexFilter: `^https://[0-9a-z-]+--[0-9a-z-]+--test\\.${process.env.HLX_DOMAIN_PREFIX}\\.(page|live|reviews)/.*`,
             initiatorDomains: [
               `tools.${process.env.HLX_PROD_SERVER_HOST_LIVE}`,
-              `labs.${process.env.HLX_PROD_SERVER_HOST_LIVE}`,
             ],
             requestMethods: [
               'get',
