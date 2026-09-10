@@ -27,7 +27,7 @@ jobs:
 
     permissions:
       contents: write   # needed to push merged changes
-      issues: write     # needed to create/close conflict, patch-drift, and templatization-candidate issues
+      issues: write     # needed to create/close ams-sync-conflict issues (other notify checks are Slack-only, no issues)
 
     steps:
       - name: Checkout AMS Branch
@@ -43,6 +43,12 @@ jobs:
       - name: Check Patch Files for Version Drift
         id: patch_drift_check
         run: |
+          # Built with literal \n (not real newlines) so this can be embedded directly
+          # into a single-line GITHUB_OUTPUT and a JSON Slack payload safely, same
+          # technique the Adobe-SSA-EDS repos' domain-notify check uses. On this repo
+          # specifically this loop is permanently a no-op (no patches/ directory exists
+          # here -- see the templatization-candidate note below), kept only for template
+          # consistency with the Lambda repos.
           MISMATCHES=""
           shopt -s nullglob
           for f in patches/*.patch; do
@@ -51,62 +57,35 @@ jobs:
             VER=$(echo "$base" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+[^+]*$')
             INSTALLED=$(jq -r --arg p "$PKG" '(.dependencies[$p] // .devDependencies[$p] // "MISSING")' package.json | sed -E 's/^[\^~]//')
             if [ "$INSTALLED" = "MISSING" ]; then
-              MISMATCHES="${MISMATCHES}"$'\n'"- \`$f\`: \`$PKG\` no longer in package.json — patch may be orphaned"
+              MISMATCHES="${MISMATCHES}${f}: ${PKG} no longer in package.json — patch may be orphaned\\n"
             elif [ "$INSTALLED" != "$VER" ]; then
-              MISMATCHES="${MISMATCHES}"$'\n'"- \`$f\`: patch pinned to \`$VER\`, package.json now has \`$PKG@$INSTALLED\` — patch likely needs regenerating/renaming"
+              MISMATCHES="${MISMATCHES}${f}: patch pinned to ${VER}, package.json now has ${PKG}@${INSTALLED}\\n"
             fi
           done
 
           if [ -n "$MISMATCHES" ]; then
             echo "has_drift=true" >> $GITHUB_OUTPUT
-            {
-              echo 'drift_report<<PATCH_DRIFT_EOF'
-              echo "$MISMATCHES"
-              echo 'PATCH_DRIFT_EOF'
-            } >> $GITHUB_OUTPUT
+            echo "drift_report=$MISMATCHES" >> $GITHUB_OUTPUT
             echo "⚠️ Patch version drift detected:"
-            echo "$MISMATCHES"
+            echo -e "$MISMATCHES"
           else
             echo "has_drift=false" >> $GITHUB_OUTPUT
             echo "✅ All patch files match their pinned package.json versions."
           fi
 
-      - name: Check for Existing Patch Drift Issue
-        id: patch_drift_issue_check
-        if: steps.patch_drift_check.outputs.has_drift == 'true'
-        run: |
-          EXISTING=$(curl -s \
-            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-            -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/repos/${{ github.repository }}/issues?state=open&labels=ams-patch-drift" \
-            | jq 'length')
-          echo "drift_issue_exists=$( [ "$EXISTING" -gt 0 ] && echo true || echo false )" >> $GITHUB_OUTPUT
-
-      - name: Create GitHub Issue for Patch Drift
-        id: patch_drift_create_issue
-        if: steps.patch_drift_check.outputs.has_drift == 'true' && steps.patch_drift_issue_check.outputs.drift_issue_exists == 'false'
-        env:
-          DRIFT_REPORT: ${{ steps.patch_drift_check.outputs.drift_report }}
-        run: |
-          BODY=$(jq -n \
-            --arg report "$DRIFT_REPORT" \
-            --arg run "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
-            '"## Patch Version Drift Detected\n\nOne or more files in `patches/` no longer match the version currently pinned in `package.json`.\n\n" + $report + "\n\n**Action:** confirm whether the patch still applies cleanly at the new version (`npx patch-package <pkg>`), then rename/regenerate as needed.\n\n**Detected in run:** " + $run')
-          curl -s -X POST \
-            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-            -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/repos/${{ github.repository }}/issues" \
-            -d "$(jq -n --arg body "$BODY" '{title: "⚠️ Patch version drift detected", body: $body, labels: ["ams-patch-drift"]}')"
-
+      # Slack-only, notify-only -- same rationale as the domain-notify check on the
+      # Adobe-SSA-EDS repos (Concern B): informational, never blocks, no persistent
+      # GitHub issue to track/close. If this fires daily on an unresolved drift, that's
+      # a signal the drift itself needs fixing, not something to suppress via dedup.
       - name: Notify Slack on Patch Drift
-        if: steps.patch_drift_check.outputs.has_drift == 'true' && steps.patch_drift_issue_check.outputs.drift_issue_exists == 'false'
+        if: steps.patch_drift_check.outputs.has_drift == 'true'
         uses: slackapi/slack-github-action@v2.0.0
         with:
           webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
           webhook-type: incoming-webhook
           payload: |
             {
-              "text": "⚠️ *Path 2 — Patch Version Drift Detected*\n*Repo:* `${{ github.repository }}`\nOne or more `patches/*.patch` files no longer match the pinned version in `package.json`. See the `ams-patch-drift` issue for details."
+              "text": "⚠️ *Path 2 — Patch Version Drift Detected*\n*Repo:* `${{ github.repository }}`\nOne or more `patches/*.patch` files no longer match the pinned version in `package.json`:\n```${{ steps.patch_drift_check.outputs.drift_report }}```\n_Notify-only — does not block the merge._"
             }
 
       - name: Check for Release Update on Main
@@ -238,72 +217,56 @@ jobs:
       # first-party source (no node_modules layer to defer to) -- this scan is the only check.
       # Scoped to src/ only (not test/), since test fixtures are full of intentionally-literal
       # example domains (e.g. mockHelixEnvironment defaults) that aren't real candidates.
+      # Scans only ADDED lines from the merge's own diff (like the Adobe-SSA-EDS repos'
+      # domain-notify check), not the whole file content -- avoids re-flagging
+      # pre-existing, already-accepted literals every time an unrelated part of the
+      # same file gets touched by a later merge. Regex has no quote-boundary
+      # requirement (also matching da-live's style), so it catches a hardcoded value
+      # anywhere in an added line (e.g. a full hostname/URL), not just a bare quoted
+      # domain-suffix literal.
       - name: Scan Newly Merged Files for Templatization Candidates
         id: templatization_scan
         if: steps.merge_step.outcome == 'success'
         run: |
-          CHANGED=$(git diff --name-only "${{ steps.changes_check.outputs.pre_merge_sha }}" "${{ steps.merge_step.outputs.synced_sha }}" -- 'src/**/*.js' 'src/**/*.mjs' || true)
+          PRE="${{ steps.changes_check.outputs.pre_merge_sha }}"
+          POST="${{ steps.merge_step.outputs.synced_sha }}"
+          CHANGED=$(git diff --name-only "$PRE" "$POST" -- 'src/**/*.js' 'src/**/*.mjs' || true)
 
           FINDINGS=""
           for f in $CHANGED; do
-            [ -f "$f" ] || continue
-            MATCHES=$(grep -nE "['\"\`](\.hlx\.page|\.hlx\.live|\.aem\.page|\.aem\.live|\.aem\.reviews)['\"\`]" "$f" || true)
+            MATCHES=$(git diff "$PRE" "$POST" -- "$f" 2>/dev/null \
+              | awk '/^\+/ && !/^\+\+\+/' \
+              | grep -oE '\.hlx\.(page|live)|\.aem\.(page|live|reviews)' \
+              | sort -u | paste -sd ',' - || true)
             if [ -n "$MATCHES" ]; then
-              FINDINGS="${FINDINGS}"$'\n'"**$f**"$'\n'"$MATCHES"$'\n'
+              FINDINGS="${FINDINGS}${f}: ${MATCHES}\\n"
             fi
           done
 
           if [ -n "$FINDINGS" ]; then
             echo "has_candidates=true" >> $GITHUB_OUTPUT
-            {
-              echo 'findings<<TEMPLATIZATION_EOF'
-              echo "$FINDINGS"
-              echo 'TEMPLATIZATION_EOF'
-            } >> $GITHUB_OUTPUT
-            echo "⚠️ Possible templatization candidates found in newly merged files:"
-            echo "$FINDINGS"
+            echo "findings=$FINDINGS" >> $GITHUB_OUTPUT
+            echo "⚠️ Possible templatization candidates found in newly merged lines:"
+            echo -e "$FINDINGS"
           else
             echo "has_candidates=false" >> $GITHUB_OUTPUT
-            echo "✅ No hardcoded domain patterns found in newly merged src/ files."
+            echo "✅ No hardcoded domain patterns found in newly merged src/ lines."
           fi
 
-      - name: Check for Existing Templatization Candidate Issue
-        id: templatization_issue_check
-        if: steps.templatization_scan.outputs.has_candidates == 'true'
-        run: |
-          EXISTING=$(curl -s \
-            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-            -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/repos/${{ github.repository }}/issues?state=open&labels=ams-templatization-candidate" \
-            | jq 'length')
-          echo "candidate_issue_exists=$( [ "$EXISTING" -gt 0 ] && echo true || echo false )" >> $GITHUB_OUTPUT
-
-      - name: Create GitHub Issue for Templatization Candidates
-        id: templatization_create_issue
-        if: steps.templatization_scan.outputs.has_candidates == 'true' && steps.templatization_issue_check.outputs.candidate_issue_exists == 'false'
-        env:
-          FINDINGS: ${{ steps.templatization_scan.outputs.findings }}
-        run: |
-          BODY=$(jq -n \
-            --arg findings "$FINDINGS" \
-            --arg sha "${{ steps.merge_step.outputs.synced_sha }}" \
-            --arg run "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
-            '"## Possible Env-Templatization Candidates\n\nThe merge from `main` brought in `src/` file changes that match a hardcoded `.hlx.*`/`.aem.*` domain pattern (see `docs/domain-injection.md` for the convention).\n\n" + $findings + "\n\n**Action:** review whether these need to become `process.env.HLX_PROD_SERVER_HOST_PAGE` / `HLX_PROD_SERVER_HOST_LIVE` / `HLX_DOMAIN_PREFIX` references instead, same as the rest of the codebase. Some hardcoded domains are intentional (e.g. `tools.aem.live`, a shared commercial-only Adobe site, not customer-specific) -- use judgment, this is notify-only.\n\n**Synced to:** `" + $sha + "`\n**Detected in run:** " + $run')
-          curl -s -X POST \
-            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-            -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/repos/${{ github.repository }}/issues" \
-            -d "$(jq -n --arg body "$BODY" '{title: "🔍 Possible env-templatization candidates from latest sync", body: $body, labels: ["ams-templatization-candidate"]}')"
-
+      # Slack-only, notify-only -- same rationale as the patch-drift check above and
+      # the domain-notify check on the Adobe-SSA-EDS repos (Concern B): may be
+      # legitimate (e.g. tools.aem.live, a shared commercial-only site, not customer-
+      # specific) or may need templatizing -- can't tell automatically, so this is a
+      # human-review flag, not a blocking gate, and doesn't need a persistent issue.
       - name: Notify Slack on Templatization Candidates
-        if: steps.templatization_scan.outputs.has_candidates == 'true' && steps.templatization_issue_check.outputs.candidate_issue_exists == 'false'
+        if: steps.templatization_scan.outputs.has_candidates == 'true'
         uses: slackapi/slack-github-action@v2.0.0
         with:
           webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
           webhook-type: incoming-webhook
           payload: |
             {
-              "text": "🔍 *Path 2 — Possible Env-Templatization Candidates*\n*Repo:* `${{ github.repository }}`\n*Synced to:* `${{ steps.merge_step.outputs.synced_sha }}`\nFiles merged from `main` contain patterns that look like hardcoded region/domain/bucket values. See the `ams-templatization-candidate` issue for details."
+              "text": "🔍 *Path 2 — Possible Env-Templatization Candidates*\n*Repo:* `${{ github.repository }}`\n*Synced to:* `${{ steps.merge_step.outputs.synced_sha }}`\nNewly merged lines in `src/` contain patterns that look like hardcoded domain values. Some may be intentional (e.g. `tools.aem.live`); others may need `process.env.HLX_PROD_SERVER_HOST_PAGE`/`_LIVE`/`HLX_DOMAIN_PREFIX`:\n```${{ steps.templatization_scan.outputs.findings }}```\n_Notify-only — the merge already completed; nothing is blocked._"
             }
 
       # Non-conflicting 3-way merges can silently drop an AMS-authored `this.X = ...`
@@ -321,68 +284,41 @@ jobs:
           POST="${{ steps.merge_step.outputs.synced_sha }}"
           CHANGED=$(git diff --name-only "$PRE" "$POST" -- 'src/**/*.js' 'src/**/*.mjs' || true)
 
+          # Built with literal \n (not real newlines), same reason as the other scans.
           DROPPED=""
           for f in $CHANGED; do
             PRE_PROPS=$(git show "$PRE:$f" 2>/dev/null | grep -oE 'this\.[A-Za-z_][A-Za-z0-9_]*[[:space:]]*=[^=]' | sed -E 's/this\.([A-Za-z0-9_]+).*/\1/' | sort -u || true)
             [ -z "$PRE_PROPS" ] && continue
             POST_PROPS=$(git show "$POST:$f" 2>/dev/null | grep -oE 'this\.[A-Za-z_][A-Za-z0-9_]*[[:space:]]*=[^=]' | sed -E 's/this\.([A-Za-z0-9_]+).*/\1/' | sort -u || true)
-            MISSING=$(comm -23 <(echo "$PRE_PROPS") <(echo "$POST_PROPS") || true)
+            MISSING=$(comm -23 <(echo "$PRE_PROPS") <(echo "$POST_PROPS") | paste -sd ',' - || true)
             if [ -n "$MISSING" ]; then
-              DROPPED="${DROPPED}"$'\n'"**$f**"$'\n'"$(echo "$MISSING" | sed 's/^/- this./')"$'\n'
+              DROPPED="${DROPPED}${f}: ${MISSING}\\n"
             fi
           done
 
           if [ -n "$DROPPED" ]; then
             echo "has_dropped=true" >> $GITHUB_OUTPUT
-            {
-              echo 'dropped<<DROPPED_EOF'
-              echo "$DROPPED"
-              echo 'DROPPED_EOF'
-            } >> $GITHUB_OUTPUT
+            echo "dropped=$DROPPED" >> $GITHUB_OUTPUT
             echo "⚠️ Possible silently-dropped this.X assignments found:"
-            echo "$DROPPED"
+            echo -e "$DROPPED"
           else
             echo "has_dropped=false" >> $GITHUB_OUTPUT
             echo "✅ No this.X assignments disappeared across the merge."
           fi
 
-      - name: Check for Existing Dropped-Assignment Issue
-        id: this_x_issue_check
-        if: steps.this_x_scan.outputs.has_dropped == 'true'
-        run: |
-          EXISTING=$(curl -s \
-            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-            -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/repos/${{ github.repository }}/issues?state=open&labels=ams-dropped-assignment-candidate" \
-            | jq 'length')
-          echo "dropped_issue_exists=$( [ "$EXISTING" -gt 0 ] && echo true || echo false )" >> $GITHUB_OUTPUT
-
-      - name: Create GitHub Issue for Dropped Assignments
-        id: this_x_create_issue
-        if: steps.this_x_scan.outputs.has_dropped == 'true' && steps.this_x_issue_check.outputs.dropped_issue_exists == 'false'
-        env:
-          DROPPED: ${{ steps.this_x_scan.outputs.dropped }}
-        run: |
-          BODY=$(jq -n \
-            --arg dropped "$DROPPED" \
-            --arg sha "${{ steps.merge_step.outputs.synced_sha }}" \
-            --arg run "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
-            '"## Possible Silently-Dropped this.X Assignments\n\nThe merge from `main` changed files where a `this.X = ...` instance-property assignment present before the merge no longer appears after it, with no merge conflict raised. This can happen when git cleanly auto-merges non-overlapping edits to the same method -- it does **not** mean something is wrong, only that a human should check.\n\n" + $dropped + "\n\n**Action:** check the corresponding upstream commit(s) to see whether this property was deliberately removed/replaced (nothing to do) or silently lost in the merge (needs restoring). This is notify-only and never blocks the merge.\n\n**Synced to:** `" + $sha + "`\n**Detected in run:** " + $run')
-          curl -s -X POST \
-            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-            -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/repos/${{ github.repository }}/issues" \
-            -d "$(jq -n --arg body "$BODY" '{title: "🔍 Possible silently-dropped this.X assignments from latest sync", body: $body, labels: ["ams-dropped-assignment-candidate"]}')"
-
+      # Slack-only, notify-only -- same rationale as the other checks above: a hit can
+      # be a real silent drop (needs restoring) or a correct upstream removal (nothing
+      # to do); only a human reading the upstream diff can tell which, so this doesn't
+      # need a persistent GitHub issue, just a flag for review.
       - name: Notify Slack on Dropped Assignments
-        if: steps.this_x_scan.outputs.has_dropped == 'true' && steps.this_x_issue_check.outputs.dropped_issue_exists == 'false'
+        if: steps.this_x_scan.outputs.has_dropped == 'true'
         uses: slackapi/slack-github-action@v2.0.0
         with:
           webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
           webhook-type: incoming-webhook
           payload: |
             {
-              "text": "🔍 *Path 2 — Possible Silently-Dropped this.X Assignments*\n*Repo:* `${{ github.repository }}`\n*Synced to:* `${{ steps.merge_step.outputs.synced_sha }}`\nA `this.X = ...` assignment present before the merge no longer appears after it, with no conflict raised. See the `ams-dropped-assignment-candidate` issue for details."
+              "text": "🔍 *Path 2 — Possible Silently-Dropped this.X Assignments*\n*Repo:* `${{ github.repository }}`\n*Synced to:* `${{ steps.merge_step.outputs.synced_sha }}`\nA `this.X = ...` assignment present before the merge no longer appears after it, with no conflict raised:\n```${{ steps.this_x_scan.outputs.dropped }}```\n_Notify-only — check the upstream commit(s) to see if this was deliberate._"
             }
 
       - name: Create GitHub Issue on Conflict
