@@ -306,6 +306,85 @@ jobs:
               "text": "🔍 *Path 2 — Possible Env-Templatization Candidates*\n*Repo:* `${{ github.repository }}`\n*Synced to:* `${{ steps.merge_step.outputs.synced_sha }}`\nFiles merged from `main` contain patterns that look like hardcoded region/domain/bucket values. See the `ams-templatization-candidate` issue for details."
             }
 
+      # Non-conflicting 3-way merges can silently drop an AMS-authored `this.X = ...`
+      # instance-property assignment with no conflict marker at all, if upstream
+      # restructured nearby lines in the same method (found once during the 2026-09-09
+      # catch-up merge: a getCacheBuster() call site vanished with zero merge error).
+      # Notify-only, same as the templatization scan above -- a disappearance here can
+      # be a real drop (needs restoring) or a correct upstream removal (nothing to do),
+      # only a human reading the upstream diff can tell which.
+      - name: Scan for Silently Dropped this.X Assignments
+        id: this_x_scan
+        if: steps.merge_step.outcome == 'success'
+        run: |
+          PRE="${{ steps.changes_check.outputs.pre_merge_sha }}"
+          POST="${{ steps.merge_step.outputs.synced_sha }}"
+          CHANGED=$(git diff --name-only "$PRE" "$POST" -- 'src/**/*.js' 'src/**/*.mjs' || true)
+
+          DROPPED=""
+          for f in $CHANGED; do
+            PRE_PROPS=$(git show "$PRE:$f" 2>/dev/null | grep -oE 'this\.[A-Za-z_][A-Za-z0-9_]*[[:space:]]*=[^=]' | sed -E 's/this\.([A-Za-z0-9_]+).*/\1/' | sort -u || true)
+            [ -z "$PRE_PROPS" ] && continue
+            POST_PROPS=$(git show "$POST:$f" 2>/dev/null | grep -oE 'this\.[A-Za-z_][A-Za-z0-9_]*[[:space:]]*=[^=]' | sed -E 's/this\.([A-Za-z0-9_]+).*/\1/' | sort -u || true)
+            MISSING=$(comm -23 <(echo "$PRE_PROPS") <(echo "$POST_PROPS") || true)
+            if [ -n "$MISSING" ]; then
+              DROPPED="${DROPPED}"$'\n'"**$f**"$'\n'"$(echo "$MISSING" | sed 's/^/- this./')"$'\n'
+            fi
+          done
+
+          if [ -n "$DROPPED" ]; then
+            echo "has_dropped=true" >> $GITHUB_OUTPUT
+            {
+              echo 'dropped<<DROPPED_EOF'
+              echo "$DROPPED"
+              echo 'DROPPED_EOF'
+            } >> $GITHUB_OUTPUT
+            echo "⚠️ Possible silently-dropped this.X assignments found:"
+            echo "$DROPPED"
+          else
+            echo "has_dropped=false" >> $GITHUB_OUTPUT
+            echo "✅ No this.X assignments disappeared across the merge."
+          fi
+
+      - name: Check for Existing Dropped-Assignment Issue
+        id: this_x_issue_check
+        if: steps.this_x_scan.outputs.has_dropped == 'true'
+        run: |
+          EXISTING=$(curl -s \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}/issues?state=open&labels=ams-dropped-assignment-candidate" \
+            | jq 'length')
+          echo "dropped_issue_exists=$( [ "$EXISTING" -gt 0 ] && echo true || echo false )" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Issue for Dropped Assignments
+        id: this_x_create_issue
+        if: steps.this_x_scan.outputs.has_dropped == 'true' && steps.this_x_issue_check.outputs.dropped_issue_exists == 'false'
+        env:
+          DROPPED: ${{ steps.this_x_scan.outputs.dropped }}
+        run: |
+          BODY=$(jq -n \
+            --arg dropped "$DROPPED" \
+            --arg sha "${{ steps.merge_step.outputs.synced_sha }}" \
+            --arg run "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            '"## Possible Silently-Dropped this.X Assignments\n\nThe merge from `main` changed files where a `this.X = ...` instance-property assignment present before the merge no longer appears after it, with no merge conflict raised. This can happen when git cleanly auto-merges non-overlapping edits to the same method -- it does **not** mean something is wrong, only that a human should check.\n\n" + $dropped + "\n\n**Action:** check the corresponding upstream commit(s) to see whether this property was deliberately removed/replaced (nothing to do) or silently lost in the merge (needs restoring). This is notify-only and never blocks the merge.\n\n**Synced to:** `" + $sha + "`\n**Detected in run:** " + $run')
+          curl -s -X POST \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}/issues" \
+            -d "$(jq -n --arg body "$BODY" '{title: "🔍 Possible silently-dropped this.X assignments from latest sync", body: $body, labels: ["ams-dropped-assignment-candidate"]}')"
+
+      - name: Notify Slack on Dropped Assignments
+        if: steps.this_x_scan.outputs.has_dropped == 'true' && steps.this_x_issue_check.outputs.dropped_issue_exists == 'false'
+        uses: slackapi/slack-github-action@v2.0.0
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload: |
+            {
+              "text": "🔍 *Path 2 — Possible Silently-Dropped this.X Assignments*\n*Repo:* `${{ github.repository }}`\n*Synced to:* `${{ steps.merge_step.outputs.synced_sha }}`\nA `this.X = ...` assignment present before the merge no longer appears after it, with no conflict raised. See the `ams-dropped-assignment-candidate` issue for details."
+            }
+
       - name: Create GitHub Issue on Conflict
         id: create_issue
         if: failure() && steps.merge_step.outputs.strategy == 'failed'
