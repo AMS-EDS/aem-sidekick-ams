@@ -28,9 +28,6 @@ const hlxLive = process.env.HLX_PROD_SERVER_HOST_LIVE; // confirms env file was 
 // customer slug, e.g. "ent-aem" (not a dev/prod mode flag here)
 const customerId = process.env.NODE_ENV;
 // GitHub org that owns the customer's tools/labs websites, e.g. "adobe-ssa-eds".
-// Optional: only needed to trust the customer's tools/labs website *preview*
-// URLs (<ref>--<repo>--<org>.<prefix>.page|live). When unset, the production
-// tools.<live> / labs.<live> origins are still trusted.
 const githubOrg = (process.env.GITHUB_ORG || '').toLowerCase();
 
 if (!hlxPage || !hlxLive || !customerId) {

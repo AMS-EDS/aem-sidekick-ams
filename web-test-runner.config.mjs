@@ -37,7 +37,6 @@ const hlxReview = process.env.HLX_PROD_SERVER_HOST_REVIEW;
 // customer slug, e.g. "ent-aem" (not a dev/prod mode flag here)
 const customerId = process.env.NODE_ENV;
 // GitHub org that owns the customer's tools/labs websites, e.g. "adobe-ssa-eds"
-// (optional; only used for trusting tools/labs website preview URLs)
 const githubOrg = (process.env.GITHUB_ORG || '').toLowerCase();
 
 if (!hlxPage || !hlxLive || !customerId) {
