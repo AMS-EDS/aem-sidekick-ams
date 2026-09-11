@@ -119,14 +119,14 @@ describe('Test Site Store', () => {
     it('hlx 5', async () => {
       const config = {
         ...defaultConfig,
-        previewHost: 'main--aem-boilerplate--adobe.aem.page',
+        previewHost: `main--aem-boilerplate--adobe.${process.env.HLX_PROD_SERVER_HOST_PAGE}`,
       };
       await appStore.loadContext(sidekickElement, config);
-      expect(appStore.siteStore.innerHost).to.equal('main--aem-boilerplate--adobe.aem.page');
-      expect(appStore.siteStore.stdInnerHost).to.equal('main--aem-boilerplate--adobe.aem.page');
-      expect(appStore.siteStore.stdOuterHost).to.equal('main--aem-boilerplate--adobe.aem.live');
-      expect(appStore.siteStore.outerHost).to.equal('main--aem-boilerplate--adobe.aem.live');
-      expect(appStore.siteStore.reviewHost).to.equal('main--aem-boilerplate--adobe.aem.reviews');
+      expect(appStore.siteStore.innerHost).to.equal(`main--aem-boilerplate--adobe.${process.env.HLX_PROD_SERVER_HOST_PAGE}`);
+      expect(appStore.siteStore.stdInnerHost).to.equal(`main--aem-boilerplate--adobe.${process.env.HLX_PROD_SERVER_HOST_PAGE}`);
+      expect(appStore.siteStore.stdOuterHost).to.equal(`main--aem-boilerplate--adobe.${process.env.HLX_PROD_SERVER_HOST_LIVE}`);
+      expect(appStore.siteStore.outerHost).to.equal(`main--aem-boilerplate--adobe.${process.env.HLX_PROD_SERVER_HOST_LIVE}`);
+      expect(appStore.siteStore.reviewHost).to.equal(`main--aem-boilerplate--adobe.${process.env.HLX_PROD_SERVER_HOST_REVIEW}`);
     });
 
     it('special views ', async () => {

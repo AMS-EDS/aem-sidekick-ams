@@ -148,7 +148,10 @@ function isTrustedOrigin(origin) {
   }
 
   const TRUSTED_ORIGIN_PATTERNS = [
-    /^https:\/\/[a-z0-9-]+--helix-tools-website--adobe\.aem\.(page|live)$/, // tools
+    // labs website preview/live: <ref>--*helix-labs-website--<org>.<prefix>.page|live
+    new RegExp(`^https://[a-z0-9-]+--[a-z0-9-]*helix-labs-website--${process.env.GITHUB_ORG}\\.${process.env.HLX_DOMAIN_PREFIX}\\.(page|live)$`),
+    // tools website preview/live
+    new RegExp(`^https://[a-z0-9-]+--[a-z0-9-]*helix-tools-website--${process.env.GITHUB_ORG}\\.${process.env.HLX_DOMAIN_PREFIX}\\.(page|live)$`),
   ];
 
   if (TRUSTED_ORIGIN_PATTERNS.some((trustedOriginPattern) => origin.match(trustedOriginPattern))) {

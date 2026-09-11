@@ -490,7 +490,7 @@ describe('Plugin action bar', () => {
       sidekickTest
         .mockFetchStatusSuccess(false, {}, HelixMockContentSources.SHAREPOINT, `https://admin.${process.env.HLX_PROD_SERVER_HOST_PAGE}/status/adobe/aem-boilerplate/main/en/drafts/test`)
         .mockFetchSidekickConfigSuccess(true, true)
-        .mockHelixEnvironment(HelixMockEnvironments.PREVIEW, undefined, 'https://main--aem-boilerplate--adobe.aem.page/en/drafts/test');
+        .mockHelixEnvironment(HelixMockEnvironments.PREVIEW, undefined, `https://main--aem-boilerplate--adobe.${process.env.HLX_PROD_SERVER_HOST_PAGE}/en/drafts/test`);
 
       sidekick = sidekickTest.createSidekick();
 
