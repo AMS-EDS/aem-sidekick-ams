@@ -22,7 +22,7 @@ jobs:
       NODE_ENV: ci-test
       HLX_PROD_SERVER_HOST_PAGE: ci-test.page
       HLX_PROD_SERVER_HOST_LIVE: ci-test.live
-      HLX_PROD_SERVER_HOST_REVIEW: ci-test.page
+      HLX_PROD_SERVER_HOST_REVIEW: ci-test.reviews
       GITHUB_ORG: ci-test-org
     steps:
       - name: Checkout
