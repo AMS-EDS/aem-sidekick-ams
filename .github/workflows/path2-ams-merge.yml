@@ -221,9 +221,15 @@ jobs:
       # domain-notify check), not the whole file content -- avoids re-flagging
       # pre-existing, already-accepted literals every time an unrelated part of the
       # same file gets touched by a later merge. Regex has no quote-boundary
-      # requirement (also matching da-live's style), so it catches a hardcoded value
-      # anywhere in an added line (e.g. a full hostname/URL), not just a bare quoted
-      # domain-suffix literal.
+      # requirement (also matching da-live's style) and no fixed-suffix requirement
+      # (broadened 2026-09-11 after PR #7 found a hardcoded org+domain literal
+      # embedded inside a dynamic RegExp's own alternation group, e.g.
+      # `adobe\.aem\.(page|live)` -- the old `\.aem\.(page|live|reviews)` pattern
+      # required a literal dot immediately after "aem"/"hlx", but a RegExp source
+      # string has an escaped dot there (`aem\.`, backslash then dot), so it never
+      # matched. `(aem|hlx)\\?\.` tolerates the optional backslash either way, so it
+      # catches a hardcoded value anywhere in an added line, in whatever surrounding
+      # syntax (plain string, RegExp literal, etc).
       - name: Scan Newly Merged Files for Templatization Candidates
         id: templatization_scan
         if: steps.merge_step.outcome == 'success'
@@ -236,7 +242,7 @@ jobs:
           for f in $CHANGED; do
             MATCHES=$(git diff "$PRE" "$POST" -- "$f" 2>/dev/null \
               | awk '/^\+/ && !/^\+\+\+/' \
-              | grep -oE '\.hlx\.(page|live)|\.aem\.(page|live|reviews)' \
+              | grep -oE '(aem|hlx)\\?\.' \
               | sort -u | paste -sd ',' - || true)
             if [ -n "$MATCHES" ]; then
               FINDINGS="${FINDINGS}${f}: ${MATCHES}\\n"
